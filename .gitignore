@@ -70,4 +70,4 @@ build/Release
 .yarn-integrity
 
 # dotenv environment variables file
-.env
+# .env
