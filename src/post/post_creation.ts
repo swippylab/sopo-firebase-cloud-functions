@@ -9,7 +9,7 @@ export const onCreatePostTrigger = functions.firestore
     const firestore = admin.firestore();
 
     // get wildcard post id
-    // const postDocumentId = context.params.postId;
+    const postDocumentId = context.params.postId;
 
     // get replies document with post id
     // const repliesDocument = await firestore.collection(COLLECTION_posts).doc(postDocumentId).collection(COLLECTION_replies);
@@ -25,5 +25,5 @@ export const onCreatePostTrigger = functions.firestore
       linkedUsers: [newPostData.userId],
     };
 
-    firestore.collection(COLLECTION.POSTPREVIEWS).doc().set(postPrewviewData);
+    firestore.collection(COLLECTION.POSTPREVIEWS).doc(postDocumentId).set(postPrewviewData);
   });
