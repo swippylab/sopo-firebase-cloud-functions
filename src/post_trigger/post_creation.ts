@@ -4,7 +4,7 @@ import { COLLECTION } from '../constant/collection';
 
 export const onCreatePostTrigger = functions.firestore
   .document(`${COLLECTION.POSTS}/{postId}`)
-  .onCreate((snap, context) => {
+  .onCreate(async (snap, context) => {
     // store admin firestore
     const firestore = admin.firestore();
 
@@ -22,5 +22,11 @@ export const onCreatePostTrigger = functions.firestore
       linkedUsers: [newPostData.userId],
     };
 
-    firestore.collection(COLLECTION.POSTPREVIEWS).doc(postDocumentId).set(postPrewviewData);
+    const previewPostCreateResult = await firestore
+      .collection(COLLECTION.POSTPREVIEWS)
+      .doc(postDocumentId)
+      .set(postPrewviewData);
+
+    if (previewPostCreateResult.writeTime)
+      console.log(`posts onCreate Trigger occurs : previewPosts/${postDocumentId} create`);
   });

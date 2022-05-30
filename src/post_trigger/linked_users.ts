@@ -27,17 +27,27 @@ export const onCreateLinkedUserTrigger = functions.firestore
 
     // update preview post Document
     const updateLinkedUserIds = [...linkedUserIds, newLinkedUserId];
-    previewPostDocRef.update({
+    const previewPostUpdateResult = await previewPostDocRef.update({
       linkedUserIds: updateLinkedUserIds,
       linkedCount: updateLinkedUserIds.length,
     });
 
+    if (previewPostUpdateResult.writeTime)
+      console.log(
+        `Occur LinkedUsers onCreate Trigger : previewPosts/${postDocumentId} update linkedUserIds, spent time : ${previewPostUpdateResult.writeTime
+          .toDate()
+          .toString()}`,
+      );
+
     // update post document
-    postDocRef.update({
+    const postUpdateResult = await postDocRef.update({
       linkedCount: updateLinkedUserIds.length,
     });
 
-    console.log(
-      `Occur LinkedUsers onCreate Trigger : previewPosts/${postDocumentId} update linkedUserIds, linkedCount, posts/${postDocumentId} - update linkedCount`,
-    );
+    if (postUpdateResult)
+      console.log(
+        `Occur LinkedUsers onCreate Trigger : post/${postDocumentId} update linkedUserIds, spent time : ${postUpdateResult.writeTime
+          .toDate()
+          .toString()}`,
+      );
   });
