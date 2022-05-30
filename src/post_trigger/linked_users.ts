@@ -11,16 +11,33 @@ export const onCreateLinkedUserTrigger = functions.firestore
     // get wildcard post id
     const postDocumentId = context.params.postId;
 
-    // get data from post document
-    const postData = snap.data();
+    const newLinkedUsersDoc = snap.data();
+    const newLinkedUserId = newLinkedUsersDoc.userId;
 
-    // get replies document with post id
-    // const repliesDocument = await firestore.collection(COLLECTION_posts).doc(postDocumentId).collection(COLLECTION_replies);
+    // get post document with post id
+    const postDocRef = firestore.collection(COLLECTION.POSTS).doc(postDocumentId);
+    // const postDocumentPromise = postDocRef.get();
 
-    const updatePostData = {
-      ...postData,
-      replyCount: postData.replyCount + 1,
-    };
+    // get preview post document with post id
+    const previewPostDocRef = firestore.collection(COLLECTION.POSTPREVIEWS).doc(postDocumentId);
+    const previewPostDocumnet = await previewPostDocRef.get();
 
-    firestore.collection(COLLECTION.POSTS).doc(postDocumentId).set(updatePostData);
+    // get data from preview post document
+    const linkedUserIds = previewPostDocumnet.get('linkedUserIds');
+
+    // update preview post Document
+    const updateLinkedUserIds = [...linkedUserIds, newLinkedUserId];
+    previewPostDocRef.update({
+      linkedUserIds: updateLinkedUserIds,
+      linkedCount: updateLinkedUserIds.length,
+    });
+
+    // update post document
+    postDocRef.update({
+      linkedCount: updateLinkedUserIds.length,
+    });
+
+    console.log(
+      `Occur LinkedUsers onCreate Trigger : previewPosts/${postDocumentId} update linkedUserIds, linkedCount, posts/${postDocumentId} - update linkedCount`,
+    );
   });
