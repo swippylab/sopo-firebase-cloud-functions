@@ -4,15 +4,12 @@ import { COLLECTION } from '../constant/collection';
 
 export const onCreatePostTrigger = functions.firestore
   .document(`${COLLECTION.POSTS}/{postId}`)
-  .onCreate(async (snap, context) => {
+  .onCreate((snap, context) => {
     // store admin firestore
     const firestore = admin.firestore();
 
     // get wildcard post id
     const postDocumentId = context.params.postId;
-
-    // get replies document with post id
-    // const repliesDocument = await firestore.collection(COLLECTION_posts).doc(postDocumentId).collection(COLLECTION_replies);
 
     // get data from post document
     const newPostData = snap.data();

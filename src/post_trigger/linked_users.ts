@@ -2,8 +2,8 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { COLLECTION } from '../constant/collection';
 
-export const onCreateReplyTirgger = functions.firestore
-  .document(`${COLLECTION.POSTS}/{postId}/${COLLECTION.REPLIES}/{replyId}`)
+export const onCreateLinkedUserTrigger = functions.firestore
+  .document(`${COLLECTION.POSTS}/{postId}/${COLLECTION.LINKEDUSERS}/{linkedUserDocId}`)
   .onCreate(async (snap, context) => {
     // store admin firestore
     const firestore = admin.firestore();
@@ -13,6 +13,9 @@ export const onCreateReplyTirgger = functions.firestore
 
     // get data from post document
     const postData = snap.data();
+
+    // get replies document with post id
+    // const repliesDocument = await firestore.collection(COLLECTION_posts).doc(postDocumentId).collection(COLLECTION_replies);
 
     const updatePostData = {
       ...postData,
