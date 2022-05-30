@@ -1,6 +1,9 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { COLLECTION } from '../constant/collection';
+import { FIELD } from '../constant/field';
+
+const log = functions.logger.log;
 
 export const onCreateReplyTirgger = functions.firestore
   .document(`${COLLECTION.POSTS}/{postId}/${COLLECTION.REPLIES}/{replyId}`)
@@ -19,17 +22,15 @@ export const onCreateReplyTirgger = functions.firestore
     const postDocumnet = await postDocRef.get();
 
     // get data from post document
-    const replyCount = postDocumnet.get('replyCount');
+    const replyCount = postDocumnet.get(FIELD.REPLYCOUNT);
 
     // update post document
     const updateReplyCount = replyCount + 1;
     const postUpdateResult = await postDocRef.update({ replyCount: updateReplyCount });
 
     if (postUpdateResult.writeTime)
-      console.log(
-        `Occur replies onCreate Trigger : posts/${postDocumentId} update replyCount, spent time : ${postUpdateResult.writeTime
-          .toDate()
-          .toString()}`,
+      log(
+        `replies onCreate Trigger occurs : posts/${postDocumentId} update replyCount, spent time : ${postUpdateResult.writeTime.toMillis()}(ms)`,
       );
 
     // udpate preview post document
@@ -37,9 +38,7 @@ export const onCreateReplyTirgger = functions.firestore
       replyCount: updateReplyCount,
     });
 
-    console.log(
-      `Occur replies onCreate Trigger : previewPosts/${postDocumentId} update replyCount, spent time : ${previewPostUpdateResult.writeTime
-        .toDate()
-        .toString()}`,
+    log(
+      `replies onCreate Trigger occurs : previewPosts/${postDocumentId} update replyCount, spent time : ${previewPostUpdateResult.writeTime.toMillis()}(ms)`,
     );
   });
