@@ -1,8 +1,9 @@
 export const FIELD = {
-  LINKEDUSREIDS: 'linkedUserIds',
+  LINKEDUSERDOCIDS: 'linkedUserDocIds',
   LINKEDCOUNT: 'linkedCount',
   CREATEDDATE: 'createdDate',
   ISACTIVEATED: 'isActivated',
   REPLYCOUNT: 'replyCount',
-  USERID: 'userId',
+  USERDOCID: 'userDocId',
+  DATE: 'date',
 };
