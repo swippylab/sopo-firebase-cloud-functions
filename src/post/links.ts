@@ -34,13 +34,13 @@ export const onCreateLinkedUserTrigger = functions /* .runWith({failurePolicy}) 
       // update preview post Document
       const updateLinkedUserIds = [...linkedUserIds, newLinkedUserId];
       transaction.update(previewPostDocRef, {
-        linkedUserIds: updateLinkedUserIds,
-        linkedCount: updateLinkedUserIds.length,
+        [FIELD.LINKEDUSERDOCIDS]: updateLinkedUserIds,
+        [FIELD.LINKEDCOUNT]: updateLinkedUserIds.length,
       });
 
       // update post Document / field linkedCount
       transaction.update(postDocRef, {
-        linkedCount: updateLinkedUserIds.length,
+        [FIELD.LINKEDCOUNT]: updateLinkedUserIds.length,
       });
 
       log.debug(`update previewPost, post transaction end`);
