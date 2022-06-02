@@ -2,35 +2,84 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
+import linksCollectionTrigger from './links';
 
 const log = functions.logger;
 
 // callable function on app
 export const dicisionNewPost = functions
   .runWith({ failurePolicy: true })
-  .https.onCall((data, context) => {
+  .firestore.document(`${COLLECTION.USERS}/{userDocId}/${COLLECTION.USERNEWPOSTS}/{postDocId}`)
+  .onUpdate((changed, context) => {
     const firestore = admin.firestore();
 
-    const newPostDocId = data.postDocId;
-    const sympathy = data.sympathy;
-    const receivedDate = data.receivedDate;
+    const userDocId: string = context.params.userDocId;
+    const postDocId: string = context.params.postDocId;
 
-    let userDocId;
-    if (context.auth?.uid) userDocId = context.auth?.uid!;
-    else userDocId = data.userDocId;
+    const updateData = changed.after.data();
+    const receivedDate: Date = updateData.date;
+    const isAccepted: boolean = updateData.isAccepted;
 
-    const selectNewPostRef = firestore
-      .collection(COLLECTION.USERS)
-      .doc(userDocId)
-      .collection(COLLECTION.USERNEWPOSTS)
-      .doc(newPostDocId);
+    const batch = firestore.batch();
 
-    // delete document in userNewPosts collection
-    selectNewPostRef.delete();
+    if (isAccepted) {
+      const userSubCollectionData = { [FIELD.DATE]: receivedDate };
 
-    if (sympathy) {
-      // agree post
+      const linkedDate = new Date();
+      const postLinkData = { [FIELD.USERDOCID]: userDocId, [FIELD.LINKEDDATE]: linkedDate };
+
+      const userReceivePostRef = firestore
+        .collection(COLLECTION.USERS)
+        .doc(userDocId)
+        .collection(COLLECTION.USERRECEIVEDPOSTS)
+        .doc(postDocId);
+
+      const userAllPostRef = firestore
+        .collection(COLLECTION.USERS)
+        .doc(userDocId)
+        .collection(COLLECTION.USERALLPOSTS)
+        .doc(postDocId);
+
+      const postLinkRef = firestore
+        .collection(COLLECTION.POSTS)
+        .doc(postDocId)
+        .collection(COLLECTION.LINKS)
+        .doc();
+
+      // write at userAllPosts Collection
+      batch.set(userAllPostRef, userSubCollectionData);
+
+      // write at userReceivedPosts Collection
+      batch.set(userReceivePostRef, userSubCollectionData);
+
+      // write at liniks Collection
+      batch.set(postLinkRef, postLinkData);
+
+      log.debug(`ready for isAccepted true`);
     } else {
-      // reject post
+      const postRejectionRef = firestore
+        .collection(COLLECTION.POSTS)
+        .doc(postDocId)
+        .collection(COLLECTION.REJECTIONS)
+        .doc();
+
+      batch.set(postRejectionRef, {
+        [FIELD.USERDOCID]: userDocId,
+        [FIELD.REJECTEDDATE]: new Date(),
+      });
+
+      log.debug(`ready for isAccepted false`);
+    }
+
+    // delete userNewPost / common work
+    batch.delete(changed.after.ref);
+
+    batch.commit();
+
+    log.debug(`new Posts trigger commit`);
+
+    if (isAccepted) {
+      log.debug(`start links collection trigger`);
+      linksCollectionTrigger({ firestore, postDocId, userDocId });
     }
   });

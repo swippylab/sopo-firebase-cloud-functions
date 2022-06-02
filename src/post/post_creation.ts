@@ -3,19 +3,20 @@ import * as admin from 'firebase-admin';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
 import { v4 as uuidv4 } from 'uuid';
+import linksCollectionTrigger from './links';
 
 const log = functions.logger;
 
 export const onCreatePostTrigger = functions
   .runWith({ failurePolicy: true })
-  .firestore.document(`${COLLECTION.POSTS}/{postId}`)
+  .firestore.document(`${COLLECTION.POSTS}/{postDocId}`)
   .onCreate(async (snap, context) => {
     // store admin firestore
     const firestore = admin.firestore();
     const batch = firestore.batch();
 
     // get wildcard post id
-    const postDocumentId = context.params.postId;
+    const postDocId = context.params.postDocId;
 
     // get data from post document
     const newPostData = snap.data();
@@ -45,26 +46,42 @@ export const onCreatePostTrigger = functions
 
     const userSubCollectionData = { [FIELD.DATE]: createdDate };
 
-    const previewPostCreateRef = firestore.collection(COLLECTION.POSTPREVIEWS).doc(postDocumentId);
+    const linkedDate = new Date();
+    const postLinkData = { [FIELD.USERDOCID]: userDocId, [FIELD.LINKEDDATE]: linkedDate };
+
+    const previewPostCreateRef = firestore.collection(COLLECTION.POSTPREVIEWS).doc(postDocId);
+
     const userMyPostCreateRef = firestore
       .collection(COLLECTION.USERS)
       .doc(userDocId)
       .collection(COLLECTION.USERMYPOSTS)
-      .doc(postDocumentId);
+      .doc(postDocId);
+
     const userAllPostCreateRef = firestore
       .collection(COLLECTION.USERS)
       .doc(userDocId)
       .collection(COLLECTION.USERALLPOSTS)
-      .doc(postDocumentId);
+      .doc(postDocId);
+
+    const postLinkRef = firestore
+      .collection(COLLECTION.POSTS)
+      .doc(postDocId)
+      .collection(COLLECTION.LINKS)
+      .doc();
+
     batch.set(previewPostCreateRef, postPrewviewData);
     batch.set(userMyPostCreateRef, userSubCollectionData);
     batch.set(userAllPostCreateRef, userSubCollectionData);
+    batch.set(postLinkRef, postLinkData);
 
     const batchResultList = await batch.commit();
 
     batchResultList.forEach((element) => {
       if (element.writeTime) log.debug(`write time : ${element.writeTime.toDate()}`);
     });
+
+    log.debug(`start links collection trigger`);
+    linksCollectionTrigger({ firestore, postDocId, userDocId });
 
     // const previewPostCreateResult = await firestore
     //   .collection(COLLECTION.POSTPREVIEWS)

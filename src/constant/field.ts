@@ -6,4 +6,6 @@ export const FIELD = {
   REPLYCOUNT: 'replyCount',
   USERDOCID: 'userDocId',
   DATE: 'date',
+  REJECTEDDATE: 'rejectedDate',
+  LINKEDDATE: 'linkedDate',
 };

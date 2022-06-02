@@ -1,12 +1,13 @@
 export const COLLECTION = {
   USERS: 'users',
-  USERNEWPOSTS: 'userNewPosts',
-  USERALLPOSTS: 'userAllPosts',
-  USERBOOKMARKPOSTS: 'userBookmarkPosts',
-  USERMYPOSTS: 'userMyPosts',
-  USERRECEIVEDPOSTS: 'userReceivedPosts',
+  USERNEWPOSTS: 'newPosts',
+  USERALLPOSTS: 'allPosts',
+  USERBOOKMARKPOSTS: 'bookmarkPosts',
+  USERMYPOSTS: 'myPosts',
+  USERRECEIVEDPOSTS: 'receivedPosts',
   POSTS: 'posts',
   REPLIES: 'replies',
   POSTPREVIEWS: 'postPreviews',
   LINKS: 'links',
+  REJECTIONS: 'rejections',
 };
