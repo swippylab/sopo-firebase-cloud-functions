@@ -38,9 +38,7 @@ export async function sendPostToUser({
       sendUserDocId,
       sendPostRef,
     ));
-  }
-
-  if (useExtra) {
+  } else {
     const selectedDoc = queryToExtraReceivableUsers(sendUserDocId);
 
     if (selectedDoc == null) {
