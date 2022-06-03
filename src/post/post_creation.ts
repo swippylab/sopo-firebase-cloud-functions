@@ -3,6 +3,7 @@ import * as functions from 'firebase-functions';
 import { v4 as uuidv4 } from 'uuid';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
+import { sendPostToUser } from './new_posts';
 
 const log = functions.logger;
 
@@ -76,6 +77,8 @@ export const onCreatePostTrigger = functions
     /* const batchResultList =  */ await batch.commit();
 
     log.debug('batch commit');
+
+    sendPostToUser({ postDocId, userDocId });
 
     // batchResultList.forEach((element) => {
     //   if (element.writeTime) log.debug(`write time : ${element.writeTime.toDate()}`);

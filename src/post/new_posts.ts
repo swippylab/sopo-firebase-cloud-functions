@@ -99,7 +99,10 @@ interface sendPostToUserArgsType {
   userDocId: string;
 }
 
-async function sendPostToUser({ postDocId, userDocId: sendUserDocId }: sendPostToUserArgsType) {
+export async function sendPostToUser({
+  postDocId,
+  userDocId: sendUserDocId,
+}: sendPostToUserArgsType) {
   const firestore = admin.firestore();
 
   // 1. get globalVariables/systemPost
