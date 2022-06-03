@@ -1,5 +1,5 @@
-import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
 import linksCollectionTrigger from './links';
@@ -9,7 +9,7 @@ const log = functions.logger;
 // callable function on app
 export const dicisionNewPost = functions
   .runWith({ failurePolicy: true })
-  .firestore.document(`${COLLECTION.USERS}/{userDocId}/${COLLECTION.USERNEWPOSTS}/{postDocId}`)
+  .firestore.document(`${COLLECTION.USERS}/{userDocId}/${COLLECTION.NEWPOSTS}/{postDocId}`)
   .onUpdate((changed, context) => {
     const firestore = admin.firestore();
 
@@ -31,13 +31,13 @@ export const dicisionNewPost = functions
       const userReceivePostRef = firestore
         .collection(COLLECTION.USERS)
         .doc(userDocId)
-        .collection(COLLECTION.USERRECEIVEDPOSTS)
+        .collection(COLLECTION.RECEIVEDPOSTS)
         .doc(postDocId);
 
       const userAllPostRef = firestore
         .collection(COLLECTION.USERS)
         .doc(userDocId)
-        .collection(COLLECTION.USERALLPOSTS)
+        .collection(COLLECTION.ALLPOSTS)
         .doc(postDocId);
 
       const postLinkRef = firestore
@@ -71,8 +71,15 @@ export const dicisionNewPost = functions
       log.debug(`ready for isAccepted false`);
     }
 
+    const newPostRef = firestore
+      .collection(COLLECTION.USERS)
+      .doc(userDocId)
+      .collection(COLLECTION.NEWPOSTS)
+      .doc(postDocId);
+
     // delete userNewPost / common work
-    batch.delete(changed.after.ref);
+    // batch.delete(changed.after.ref); // 작동은 하나 warning 발생
+    batch.delete(newPostRef);
 
     batch.commit();
 
@@ -82,4 +89,6 @@ export const dicisionNewPost = functions
       log.debug(`start links collection trigger`);
       linksCollectionTrigger({ firestore, postDocId, userDocId });
     }
+
+    return true;
   });

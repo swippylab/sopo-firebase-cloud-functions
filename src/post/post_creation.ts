@@ -1,9 +1,8 @@
-import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import * as functions from 'firebase-functions';
+import { v4 as uuidv4 } from 'uuid';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
-import { v4 as uuidv4 } from 'uuid';
-import linksCollectionTrigger from './links';
 
 const log = functions.logger;
 
@@ -54,13 +53,13 @@ export const onCreatePostTrigger = functions
     const userMyPostCreateRef = firestore
       .collection(COLLECTION.USERS)
       .doc(userDocId)
-      .collection(COLLECTION.USERMYPOSTS)
+      .collection(COLLECTION.MYPOSTS)
       .doc(postDocId);
 
     const userAllPostCreateRef = firestore
       .collection(COLLECTION.USERS)
       .doc(userDocId)
-      .collection(COLLECTION.USERALLPOSTS)
+      .collection(COLLECTION.ALLPOSTS)
       .doc(postDocId);
 
     const postLinkRef = firestore
@@ -74,14 +73,13 @@ export const onCreatePostTrigger = functions
     batch.set(userAllPostCreateRef, userSubCollectionData);
     batch.set(postLinkRef, postLinkData);
 
-    const batchResultList = await batch.commit();
+    /* const batchResultList =  */ await batch.commit();
 
-    batchResultList.forEach((element) => {
-      if (element.writeTime) log.debug(`write time : ${element.writeTime.toDate()}`);
-    });
+    log.debug('batch commit');
 
-    log.debug(`start links collection trigger`);
-    linksCollectionTrigger({ firestore, postDocId, userDocId });
+    // batchResultList.forEach((element) => {
+    //   if (element.writeTime) log.debug(`write time : ${element.writeTime.toDate()}`);
+    // });
 
     // const previewPostCreateResult = await firestore
     //   .collection(COLLECTION.POSTPREVIEWS)
