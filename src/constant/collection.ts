@@ -10,4 +10,7 @@ export const COLLECTION = {
   POSTPREVIEWS: 'postPreviews',
   LINKS: 'links',
   REJECTIONS: 'rejections',
+  RECEIVABLEUSERS: 'receivableUsers',
+  EXTRARECEIVABLEUSERS: 'extraReceivableUsers',
+  GLOBALVARIABLES: 'globalVariables',
 };

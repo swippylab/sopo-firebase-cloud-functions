@@ -1,19 +1,19 @@
-import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
 
-interface linksTriggerArgsType {
+interface linkCountUpdateArgsType {
   firestore: admin.firestore.Firestore;
   postDocId: string;
   userDocId: string;
 }
 
-export default function linksCollectionTrigger({
+export default function linkCountUpdate({
   firestore,
   postDocId,
   userDocId,
-}: linksTriggerArgsType) {
+}: linkCountUpdateArgsType) {
   const log = functions.logger;
   // links collection create trigger
   // get post document with post id
