@@ -1,8 +1,10 @@
 import * as admin from 'firebase-admin';
+import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { DOCUMENT } from '../constant/document';
 import { FIELD } from '../constant/field';
-
+const log = functions.logger;
+const firestore = admin.firestore();
 interface sendPostToUserArgsType {
   postDocId: string;
   userDocId: string;
@@ -12,7 +14,7 @@ export async function sendPostToUser({
   postDocId,
   userDocId: sendUserDocId,
 }: sendPostToUserArgsType) {
-  const firestore = admin.firestore();
+  log.debug(`start send post / send user : ${sendUserDocId} / post : ${postDocId}`);
 
   // 1. get globalVariables/systemPost
   const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
@@ -61,9 +63,6 @@ async function getSelectedIdByQueryToReceivableUsers(
   sendPostRef: admin.firestore.DocumentReference<admin.firestore.DocumentData>,
 ) {
   let selectedDoc = await queryToReceivableUsers(useBool, sendUserDocId);
-
-  const firestore = admin.firestore();
-
   if (selectedDoc == null) {
     useBool = !useBool;
 
@@ -90,8 +89,8 @@ async function getSelectedIdByQueryToReceivableUsers(
   return { useBool, selectedUserId };
 }
 
-async function resetSendUserInReceivableCollection(writeIsReceived: boolean, userDocId: string) {
-  const receivableUsersCollectionRef = admin.firestore().collection(COLLECTION.RECEIVABLEUSERS);
+async function resetSendUserInReceivableCollection(resetFlag: boolean, userDocId: string) {
+  const receivableUsersCollectionRef = firestore.collection(COLLECTION.RECEIVABLEUSERS);
 
   const sendUserReceivableDocRef = await receivableUsersCollectionRef
     .where(FIELD.USERDOCID, '==', userDocId)
@@ -111,7 +110,7 @@ async function resetSendUserInReceivableCollection(writeIsReceived: boolean, use
     .firestore()
     .collection(COLLECTION.RECEIVABLEUSERS)
     .doc(docId)
-    .update({ [FIELD.ISRECEIVED]: writeIsReceived });
+    .update({ [FIELD.ISRECEIVED]: resetFlag });
 }
 
 async function queryToReceivableUsers(
@@ -156,9 +155,7 @@ async function queryToReceivableUsers(
 async function queryToExtraReceivableUsers(
   sendUserDocId: string,
 ): Promise<admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData> | null> {
-  const receivableUsersCollectionRef = admin
-    .firestore()
-    .collection(COLLECTION.EXTRARECEIVABLEUSERS);
+  const receivableUsersCollectionRef = firestore.collection(COLLECTION.EXTRARECEIVABLEUSERS);
 
   const randomKey = receivableUsersCollectionRef.doc().id;
 
