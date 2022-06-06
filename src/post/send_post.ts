@@ -39,7 +39,7 @@ export default async function sendPostToUser({
 
   let selectedUserId = null;
 
-  // 3. query
+  // 3. query(find doc)
   if (!useExtra) {
     ({ useBool, selectedUserId } = await getSelectedIdByQueryToReceivableUsers(
       useBool,
@@ -226,10 +226,10 @@ async function queryToExtraReceivableUsers(
         const queryResultDocId = doc.get(FIELD.USERDOCID);
         // if (doc.get(field.userdocid) !== sendUserDocId)
         if (queryResultDocId !== sendUserDocId) {
-          if (rejectionIds.includes(queryResultDocId)) {
+          if (!rejectionIds.includes(queryResultDocId)) {
             selectedDoc = doc;
           } else {
-            log.debug(`query result id is included in rejection ids`);
+            log.debug(`query result id is included in rejection ids : ${queryResultDocId}`);
           }
         } else {
           log.debug(`query result id is same with send user id / ${doc.get(FIELD.USERDOCID)}`);
@@ -248,13 +248,13 @@ async function queryToExtraReceivableUsers(
         gteQuerySnapshot.forEach((doc) => {
           const queryResultDocId = doc.get(FIELD.USERDOCID);
           if (queryResultDocId !== sendUserDocId) {
-            if (rejectionIds.includes(queryResultDocId)) {
+            if (!rejectionIds.includes(queryResultDocId)) {
               selectedDoc = doc;
             } else {
-              log.debug(`query result id is included in rejection ids`);
+              log.debug(`query result id is included in rejection ids : ${queryResultDocId}`);
             }
           } else {
-            log.debug(`query result id is same with send user id / ${doc.get(FIELD.USERDOCID)}`);
+            log.debug(`query result id is same with send user id / ${queryResultDocId}`);
           }
         });
       }
