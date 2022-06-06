@@ -62,10 +62,10 @@ export const newPostHandleUpdateTrigger = functions
         .collection(COLLECTION.POSTS)
         .doc(postDocId)
         .collection(COLLECTION.REJECTIONS)
-        .doc();
+        .doc(userDocId);
 
       batch.set(postRejectionRef, {
-        [FIELD.USERDOCID]: userDocId,
+        // [FIELD.USERDOCID]: userDocId,
         [FIELD.REJECTEDDATE]: new Date(),
       });
 
@@ -73,9 +73,13 @@ export const newPostHandleUpdateTrigger = functions
     }
 
     // delete userNewPost / common work
-    // const newPostRef = firestore.doc(userDocId).collection(COLLECTION.NEWPOSTS).doc(postDocId);
-    // batch.delete(newPostRef);
-    batch.delete(changed.after.ref); // warning으로 상위 코드로 대체하였으나 어느순간부터 상위코드가 작동하지 않아 다시 오픈
+    const newPostRef = firestore
+      .collection(COLLECTION.USERS)
+      .doc(userDocId)
+      .collection(COLLECTION.NEWPOSTS)
+      .doc(postDocId);
+    batch.delete(newPostRef);
+    // batch.delete(changed.after.ref); // warning으로 상위 코드로 대체하였으나 어느순간부터 warning 안뜸
 
     batch.commit();
 
