@@ -28,6 +28,8 @@ export default async function sendPostToUser({
     useExtra = sendPostDocument.get(FIELD.USEEXTRA);
     useBool = sendPostDocument.get(FIELD.USEBOOL);
 
+    log.debug(`get global variables / send post, useBool : ${useBool}, useExtra : ${useExtra}`);
+
     // toggle extra flag
     transaction.update(sendPostRef, { [FIELD.USEEXTRA]: !useExtra });
   });
@@ -118,12 +120,14 @@ async function queryToReceivableUsers(
   useBool: boolean,
   sendUserDocId: string,
 ): Promise<admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData> | null> {
-  const receivableUsersCollectionRef = admin.firestore().collection(COLLECTION.RECEIVABLEUSERS);
+  log.debug(`start queryToReceivableUsers method`);
+  const receivableUsersCollectionRef = firestore.collection(COLLECTION.RECEIVABLEUSERS);
 
   const randomKey = receivableUsersCollectionRef.doc().id;
+  log.debug(`generated search key : ${randomKey}`);
 
   const gteQuerySnapshot = await receivableUsersCollectionRef
-    .where(FIELD.USERDOCID, '!=', sendUserDocId)
+    .where(admin.firestore.FieldPath.documentId(), '!=', sendUserDocId)
     .where(FIELD.ISRECEIVED, '==', useBool)
     .where(admin.firestore.FieldPath.documentId(), '>=', randomKey)
     .limit(1)
@@ -137,7 +141,7 @@ async function queryToReceivableUsers(
     });
   } else {
     const ltQuerySnapshot = await receivableUsersCollectionRef
-      .where(FIELD.USERDOCID, '!=', sendUserDocId)
+      .where(admin.firestore.FieldPath.documentId(), '!=', sendUserDocId)
       .where(FIELD.ISRECEIVED, '==', useBool)
       .where(admin.firestore.FieldPath.documentId(), '<', randomKey)
       .limit(1)
@@ -150,6 +154,7 @@ async function queryToReceivableUsers(
     }
   }
 
+  log.debug(`end queryToReceivableUsers method`);
   return selectedDoc;
 }
 
@@ -161,7 +166,7 @@ async function queryToExtraReceivableUsers(
   const randomKey = receivableUsersCollectionRef.doc().id;
 
   const gteQuerySnapshot = await receivableUsersCollectionRef
-    .where(FIELD.USERDOCID, '!=', sendUserDocId)
+    .where(admin.firestore.FieldPath.documentId(), '!=', sendUserDocId)
     .where(admin.firestore.FieldPath.documentId(), '>=', randomKey)
     .limit(1)
     .get();
@@ -174,7 +179,7 @@ async function queryToExtraReceivableUsers(
     });
   } else {
     const ltQuerySnapshot = await receivableUsersCollectionRef
-      .where(FIELD.USERDOCID, '!=', sendUserDocId)
+      .where(admin.firestore.FieldPath.documentId(), '!=', sendUserDocId)
       .where(admin.firestore.FieldPath.documentId(), '<', randomKey)
       .limit(1)
       .get();

@@ -75,9 +75,13 @@ export const onCreatePostTrigger = functions
     const postLinkData = { [FIELD.USERDOCID]: userDocId, [FIELD.LINKEDDATE]: linkedDate };
 
     // extra receivable users collection
-    const extraReceivableUserRef = firestore.collection(COLLECTION.EXTRARECEIVABLEUSERS).doc();
+    const extraReceivableUserRef = firestore
+      .collection(COLLECTION.EXTRARECEIVABLEUSERS)
+      .doc(userDocId);
 
-    const extraReceivableData = { [FIELD.USERDOCID]: userDocId, [FIELD.CREATEDDATE]: linkedDate };
+    const extraReceivableData = {
+      /*  [FIELD.USERDOCID]: userDocId,  */ [FIELD.CREATEDDATE]: linkedDate,
+    };
 
     batch.set(previewPostCreateRef, postPrewviewData);
     batch.set(userMyPostCreateRef, userSubCollectionData);

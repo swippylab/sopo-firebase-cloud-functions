@@ -11,7 +11,7 @@ const log = functions.logger;
 export const newPostHandleUpdateTrigger = functions
   .runWith({ failurePolicy: true })
   .firestore.document(`${COLLECTION.USERS}/{userDocId}/${COLLECTION.NEWPOSTS}/{postDocId}`)
-  .onUpdate((changed, context) => {
+  .onUpdate(async (changed, context) => {
     const firestore = admin.firestore();
 
     const userDocId: string = context.params.userDocId;
@@ -72,11 +72,7 @@ export const newPostHandleUpdateTrigger = functions
       log.debug(`ready for isAccepted false`);
     }
 
-    const newPostRef = firestore
-      .collection(COLLECTION.USERS)
-      .doc(userDocId)
-      .collection(COLLECTION.NEWPOSTS)
-      .doc(postDocId);
+    const newPostRef = firestore.doc(userDocId).collection(COLLECTION.NEWPOSTS).doc(postDocId);
 
     // delete userNewPost / common work
     // batch.delete(changed.after.ref); // 작동은 하나 warning 발생
@@ -91,5 +87,5 @@ export const newPostHandleUpdateTrigger = functions
       linkCountUpdate({ firestore, postDocId, userDocId });
     }
 
-    sendPostToUser({ postDocId, userDocId });
+    await sendPostToUser({ postDocId, userDocId });
   });
