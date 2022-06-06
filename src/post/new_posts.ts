@@ -3,12 +3,12 @@ import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
 import linkCountUpdate from './links';
-import { sendPostToUser } from './send_post';
+import sendPostToUser from './send_post';
 
 const log = functions.logger;
 
 // callable function on app
-export const newPostHandlerTrigger = functions
+export const newPostHandleUpdateTrigger = functions
   .runWith({ failurePolicy: true })
   .firestore.document(`${COLLECTION.USERS}/{userDocId}/${COLLECTION.NEWPOSTS}/{postDocId}`)
   .onUpdate((changed, context) => {

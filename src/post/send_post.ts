@@ -10,7 +10,7 @@ interface sendPostToUserArgsType {
   userDocId: string;
 }
 
-export async function sendPostToUser({
+export default async function sendPostToUser({
   postDocId,
   userDocId: sendUserDocId,
 }: sendPostToUserArgsType) {
@@ -28,6 +28,7 @@ export async function sendPostToUser({
     useExtra = sendPostDocument.get(FIELD.USEEXTRA);
     useBool = sendPostDocument.get(FIELD.USEBOOL);
 
+    // toggle extra flag
     transaction.update(sendPostRef, { [FIELD.USEEXTRA]: !useExtra });
   });
 
