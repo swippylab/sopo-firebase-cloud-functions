@@ -22,7 +22,7 @@ export default async function sendPostToUser({
   let useExtra = false;
   let useBool = false;
 
-  firestore.runTransaction(async (transaction) => {
+  await firestore.runTransaction(async (transaction) => {
     const sendPostDocument = await transaction.get(sendPostRef);
 
     useExtra = sendPostDocument.get(FIELD.USEEXTRA);
@@ -44,12 +44,20 @@ export default async function sendPostToUser({
       sendPostRef,
     ));
   } else {
-    const selectedDoc = queryToExtraReceivableUsers(sendUserDocId);
+    const selectedDoc = await queryToExtraReceivableUsers(sendUserDocId);
 
     if (selectedDoc == null) {
-      selectedUserId = getSelectedIdByQueryToReceivableUsers(useBool, sendUserDocId, sendPostRef);
+      ({ useBool, selectedUserId } = await getSelectedIdByQueryToReceivableUsers(
+        useBool,
+        sendUserDocId,
+        sendPostRef,
+      ));
+    } else {
+      selectedUserId = selectedDoc.id;
     }
   }
+
+  log.debug(`user selected to send : ${selectedUserId}`);
 
   // 3. create doc in newPost collection -> send post
   const newPostRef = firestore
@@ -69,15 +77,18 @@ async function getSelectedIdByQueryToReceivableUsers(
   if (selectedDoc == null) {
     useBool = !useBool;
 
-    firestore.runTransaction(async (transaction) => {
+    log.debug(`receivabled users query is null / convert useBool : ${useBool}`);
+
+    await firestore.runTransaction(async (transaction) => {
       // change use bool in global varables collection
       transaction.update(sendPostRef, { [FIELD.USEBOOL]: useBool });
     });
 
-    resetSendUserInReceivableCollection(useBool, sendUserDocId);
-  }
+    await resetSendUserInReceivableCollection(useBool, sendUserDocId);
 
-  selectedDoc = await queryToReceivableUsers(useBool, sendUserDocId);
+    log.debug(`retry query to receivable users`);
+    selectedDoc = await queryToReceivableUsers(useBool, sendUserDocId);
+  }
 
   if (selectedDoc == null) {
     //Todo: error
@@ -86,9 +97,10 @@ async function getSelectedIdByQueryToReceivableUsers(
   // update isReceived flag
   const receivableUserRef = firestore.collection(COLLECTION.RECEIVABLEUSERS).doc(selectedDoc?.id!);
 
-  receivableUserRef.update({ [FIELD.ISRECEIVED]: !useBool });
+  await receivableUserRef.update({ [FIELD.ISRECEIVED]: !useBool });
 
-  const selectedUserId = selectedDoc?.get(FIELD.USERDOCID);
+  // const selectedUserId = selectedDoc?.get(FIELD.USERDOCID);
+  const selectedUserId = selectedDoc?.id!;
   return { useBool, selectedUserId };
 }
 
@@ -124,7 +136,9 @@ async function queryToReceivableUsers(
   const receivableUsersCollectionRef = firestore.collection(COLLECTION.RECEIVABLEUSERS);
 
   const randomKey = receivableUsersCollectionRef.doc().id;
-  log.debug(`generated search key : ${randomKey}`);
+  log.debug(
+    `generated search key : ${randomKey} / useBool : ${useBool} / send User Doc id : ${sendUserDocId}`,
+  );
 
   const gteQuerySnapshot = await receivableUsersCollectionRef
     .where(admin.firestore.FieldPath.documentId(), '!=', sendUserDocId)
@@ -132,6 +146,8 @@ async function queryToReceivableUsers(
     .where(admin.firestore.FieldPath.documentId(), '>=', randomKey)
     .limit(1)
     .get();
+
+  log.debug(`receivable user search gte size : ${gteQuerySnapshot.size}`);
 
   let selectedDoc = null;
 
@@ -147,6 +163,7 @@ async function queryToReceivableUsers(
       .limit(1)
       .get();
 
+    log.debug(`receivable user search lt size : ${ltQuerySnapshot.size}`);
     if (ltQuerySnapshot.size > 0) {
       gteQuerySnapshot.forEach((doc) => {
         selectedDoc = doc;
@@ -154,7 +171,7 @@ async function queryToReceivableUsers(
     }
   }
 
-  log.debug(`end queryToReceivableUsers method`);
+  log.debug(`end queryToReceivableUsers method / selectedDoc is null : ${selectedDoc == null}`);
   return selectedDoc;
 }
 
@@ -171,6 +188,8 @@ async function queryToExtraReceivableUsers(
     .limit(1)
     .get();
 
+  log.debug(`extra receivable user search gte size : ${gteQuerySnapshot.size}`);
+
   let selectedDoc = null;
 
   if (gteQuerySnapshot.size > 0) {
@@ -183,6 +202,8 @@ async function queryToExtraReceivableUsers(
       .where(admin.firestore.FieldPath.documentId(), '<', randomKey)
       .limit(1)
       .get();
+
+    log.debug(`extra receivable user search lt size : ${ltQuerySnapshot.size}`);
 
     if (ltQuerySnapshot.size > 0) {
       gteQuerySnapshot.forEach((doc) => {
