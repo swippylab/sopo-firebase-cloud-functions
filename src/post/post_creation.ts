@@ -44,35 +44,46 @@ export const onCreatePostTrigger = functions
       [FIELD.LINKEDUSERDOCIDS]: [userDocId],
     };
 
-    const userSubCollectionData = { [FIELD.DATE]: createdDate };
-
-    const linkedDate = new Date();
-    const postLinkData = { [FIELD.USERDOCID]: userDocId, [FIELD.LINKEDDATE]: linkedDate };
-
+    // preview post collection
     const previewPostCreateRef = firestore.collection(COLLECTION.POSTPREVIEWS).doc(postDocId);
 
+    // myPosts sub collection in user doc
     const userMyPostCreateRef = firestore
       .collection(COLLECTION.USERS)
       .doc(userDocId)
       .collection(COLLECTION.MYPOSTS)
       .doc(postDocId);
 
+    // allPosts sub collection in user doc
     const userAllPostCreateRef = firestore
       .collection(COLLECTION.USERS)
       .doc(userDocId)
       .collection(COLLECTION.ALLPOSTS)
       .doc(postDocId);
 
+    // sub collection in user data
+    const userSubCollectionData = { [FIELD.DATE]: createdDate };
+
+    // links sub collection in self
     const postLinkRef = firestore
       .collection(COLLECTION.POSTS)
       .doc(postDocId)
       .collection(COLLECTION.LINKS)
       .doc();
 
+    const linkedDate = new Date();
+    const postLinkData = { [FIELD.USERDOCID]: userDocId, [FIELD.LINKEDDATE]: linkedDate };
+
+    // extra receivable users collection
+    const extraReceivableUserRef = firestore.collection(COLLECTION.EXTRARECEIVABLEUSERS).doc();
+
+    const extraReceivableData = { [FIELD.USERDOCID]: userDocId, [FIELD.CREATEDDATE]: linkedDate };
+
     batch.set(previewPostCreateRef, postPrewviewData);
     batch.set(userMyPostCreateRef, userSubCollectionData);
     batch.set(userAllPostCreateRef, userSubCollectionData);
     batch.set(postLinkRef, postLinkData);
+    batch.set(extraReceivableUserRef, extraReceivableData);
 
     /* const batchResultList =  */ await batch.commit();
 
