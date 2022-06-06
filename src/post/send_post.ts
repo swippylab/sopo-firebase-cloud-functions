@@ -165,7 +165,7 @@ async function queryToReceivableUsers(
 
     log.debug(`receivable user search lt size : ${ltQuerySnapshot.size}`);
     if (ltQuerySnapshot.size > 0) {
-      gteQuerySnapshot.forEach((doc) => {
+      ltQuerySnapshot.forEach((doc) => {
         selectedDoc = doc;
       });
     }
