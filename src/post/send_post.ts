@@ -223,8 +223,8 @@ async function queryToExtraReceivableUsers(
 
     if (gteQuerySnapshot.size > 0) {
       gteQuerySnapshot.forEach((doc) => {
+        //Todo: gte, lt snapshot callback이 동일한 동작, refactoring가능
         const queryResultDocId = doc.get(FIELD.USERDOCID);
-        // if (doc.get(field.userdocid) !== sendUserDocId)
         if (queryResultDocId !== sendUserDocId) {
           if (!rejectionIds.includes(queryResultDocId)) {
             selectedDoc = doc;
