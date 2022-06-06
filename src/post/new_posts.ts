@@ -72,11 +72,10 @@ export const newPostHandleUpdateTrigger = functions
       log.debug(`ready for isAccepted false`);
     }
 
-    const newPostRef = firestore.doc(userDocId).collection(COLLECTION.NEWPOSTS).doc(postDocId);
-
     // delete userNewPost / common work
-    // batch.delete(changed.after.ref); // 작동은 하나 warning 발생
-    batch.delete(newPostRef);
+    // const newPostRef = firestore.doc(userDocId).collection(COLLECTION.NEWPOSTS).doc(postDocId);
+    // batch.delete(newPostRef);
+    batch.delete(changed.after.ref); // warning으로 상위 코드로 대체하였으나 어느순간부터 상위코드가 작동하지 않아 다시 오픈
 
     batch.commit();
 

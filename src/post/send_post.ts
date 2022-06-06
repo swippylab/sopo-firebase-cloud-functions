@@ -53,7 +53,7 @@ export default async function sendPostToUser({
         sendPostRef,
       ));
     } else {
-      selectedUserId = selectedDoc.id;
+      selectedUserId = selectedDoc.get(FIELD.USERDOCID);
     }
   }
 
@@ -105,26 +105,26 @@ async function getSelectedIdByQueryToReceivableUsers(
 }
 
 async function resetSendUserInReceivableCollection(resetFlag: boolean, userDocId: string) {
-  const receivableUsersCollectionRef = firestore.collection(COLLECTION.RECEIVABLEUSERS);
+  // const receivableUsersCollectionRef = firestore.collection(COLLECTION.RECEIVABLEUSERS);
 
-  const sendUserReceivableDocRef = await receivableUsersCollectionRef
-    .where(FIELD.USERDOCID, '==', userDocId)
-    .get();
+  // const sendUserReceivableDocRef = await receivableUsersCollectionRef
+  //   .where(FIELD.USERDOCID, '==', userDocId)
+  //   .get();
 
-  if (sendUserReceivableDocRef.empty) {
-    // something wrong
-    // Todo: error processing
-  }
+  // if (sendUserReceivableDocRef.empty) {
+  //   // something wrong
+  //   // Todo: error processing
+  // }
 
-  let docId: string = '';
-  sendUserReceivableDocRef.forEach((doc) => {
-    docId = doc.id;
-  });
+  // let docId: string = '';
+  // sendUserReceivableDocRef.forEach((doc) => {
+  //   docId = doc.id;
+  // });
 
   admin
     .firestore()
     .collection(COLLECTION.RECEIVABLEUSERS)
-    .doc(docId)
+    .doc(userDocId)
     .update({ [FIELD.ISRECEIVED]: resetFlag });
 }
 
@@ -178,37 +178,52 @@ async function queryToReceivableUsers(
 async function queryToExtraReceivableUsers(
   sendUserDocId: string,
 ): Promise<admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData> | null> {
-  const receivableUsersCollectionRef = firestore.collection(COLLECTION.EXTRARECEIVABLEUSERS);
+  const extraReceivableUsersCollectionRef = firestore.collection(COLLECTION.EXTRARECEIVABLEUSERS);
 
-  const randomKey = receivableUsersCollectionRef.doc().id;
-
-  const gteQuerySnapshot = await receivableUsersCollectionRef
-    .where(admin.firestore.FieldPath.documentId(), '!=', sendUserDocId)
-    .where(admin.firestore.FieldPath.documentId(), '>=', randomKey)
-    .limit(1)
-    .get();
-
-  log.debug(`extra receivable user search gte size : ${gteQuerySnapshot.size}`);
-
+  log.debug(`search extra receivable users collection / send user : ${sendUserDocId}`);
   let selectedDoc = null;
+  const maxCount = 10;
+  let tryCount = 1;
+  while (selectedDoc == null) {
+    log.debug(`[${tryCount}] search try`);
 
-  if (gteQuerySnapshot.size > 0) {
-    gteQuerySnapshot.forEach((doc) => {
-      selectedDoc = doc;
-    });
-  } else {
-    const ltQuerySnapshot = await receivableUsersCollectionRef
-      .where(admin.firestore.FieldPath.documentId(), '!=', sendUserDocId)
-      .where(admin.firestore.FieldPath.documentId(), '<', randomKey)
+    const randomKey = extraReceivableUsersCollectionRef.doc().id;
+
+    const gteQuerySnapshot = await extraReceivableUsersCollectionRef
+      // .where(admin.firestore.FieldPath.documentId(), '!=', sendUserDocId)
+      .where(admin.firestore.FieldPath.documentId(), '>=', randomKey)
       .limit(1)
       .get();
 
-    log.debug(`extra receivable user search lt size : ${ltQuerySnapshot.size}`);
+    log.debug(`extra receivable user search gte size : ${gteQuerySnapshot.size}`);
 
-    if (ltQuerySnapshot.size > 0) {
+    if (gteQuerySnapshot.size > 0) {
       gteQuerySnapshot.forEach((doc) => {
-        selectedDoc = doc;
+        if (doc.get(FIELD.USERDOCID) !== sendUserDocId) selectedDoc = doc;
+        else log.debug(`query result is same id with send user id / ${doc.get(FIELD.USERDOCID)}`);
       });
+    } else {
+      const ltQuerySnapshot = await extraReceivableUsersCollectionRef
+        // .where(admin.firestore.FieldPath.documentId(), '!=', sendUserDocId)
+        .where(admin.firestore.FieldPath.documentId(), '<', randomKey)
+        .limit(1)
+        .get();
+
+      log.debug(`extra receivable user search lt size : ${ltQuerySnapshot.size}`);
+
+      if (ltQuerySnapshot.size > 0) {
+        gteQuerySnapshot.forEach((doc) => {
+          if (doc.get(FIELD.USERDOCID) !== sendUserDocId) selectedDoc = doc;
+          else log.debug(`query result is same id with send user id / ${doc.get(FIELD.USERDOCID)}`);
+        });
+      }
+    }
+
+    if (selectedDoc == null && tryCount++ >= maxCount) {
+      log.debug(
+        `No documents were found that do not match the send user doc id. Escape by reaching max count`,
+      );
+      break;
     }
   }
 
