@@ -45,7 +45,7 @@ export const onCreatePostTrigger = functions
     };
 
     // preview post collection
-    const previewPostCreateRef = firestore.collection(COLLECTION.POSTPREVIEWS).doc(postDocId);
+    const postPreviewCreateRef = firestore.collection(COLLECTION.POSTPREVIEWS).doc(postDocId);
 
     // myPosts sub collection in user doc
     const userMyPostCreateRef = firestore
@@ -82,7 +82,7 @@ export const onCreatePostTrigger = functions
       [FIELD.CREATEDDATE]: linkedDate,
     };
 
-    batch.set(previewPostCreateRef, postPrewviewData);
+    batch.set(postPreviewCreateRef, postPrewviewData);
     batch.set(userMyPostCreateRef, userSubCollectionData);
     batch.set(userAllPostCreateRef, userSubCollectionData);
     batch.set(postLinkRef, postLinkData);

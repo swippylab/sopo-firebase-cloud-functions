@@ -59,6 +59,9 @@ export default async function sendPostToUser({
       ));
     } else {
       selectedUserId = selectedDoc.get(FIELD.USERDOCID);
+
+      // delete selected doc
+      selectedDoc.ref.delete();
     }
   }
 
