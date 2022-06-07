@@ -19,19 +19,21 @@ export default async function sendPostToUser({
   // 1. get globalVariables/systemPost
   const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
 
-  let useExtra = false;
-  let useBool = false;
+  let isUsingExtra = false;
+  let searchFlag = false;
 
   await firestore.runTransaction(async (transaction) => {
     const sendPostDocument = await transaction.get(sendPostRef);
 
-    useExtra = sendPostDocument.get(FIELD.USEEXTRA);
-    useBool = sendPostDocument.get(FIELD.USEBOOL);
+    isUsingExtra = sendPostDocument.get(FIELD.ISUSINGEXTRA);
+    searchFlag = sendPostDocument.get(FIELD.SEARCHFLAG);
 
-    log.debug(`get global variables / send post, useBool : ${useBool}, useExtra : ${useExtra}`);
+    log.debug(
+      `get global variables / send post, searchFlag : ${searchFlag}, useExtra : ${isUsingExtra}`,
+    );
 
     // toggle extra flag
-    transaction.update(sendPostRef, { [FIELD.USEEXTRA]: !useExtra });
+    transaction.update(sendPostRef, { [FIELD.ISUSINGEXTRA]: !isUsingExtra });
   });
 
   // 2. query rejection user by this post
@@ -40,9 +42,9 @@ export default async function sendPostToUser({
   let selectedUserId = null;
 
   // 3. query(find doc)
-  if (!useExtra) {
-    ({ useBool, selectedUserId } = await getSelectedIdByQueryToReceivableUsers(
-      useBool,
+  if (!isUsingExtra) {
+    ({ searchFlag: searchFlag, selectedUserId } = await getSelectedIdByQueryToReceivableUsers(
+      searchFlag,
       sendUserDocId,
       rejectionIds,
       sendPostRef,
@@ -51,8 +53,8 @@ export default async function sendPostToUser({
     const selectedDoc = await queryToExtraReceivableUsers(sendUserDocId, rejectionIds);
 
     if (selectedDoc == null) {
-      ({ useBool, selectedUserId } = await getSelectedIdByQueryToReceivableUsers(
-        useBool,
+      ({ searchFlag: searchFlag, selectedUserId } = await getSelectedIdByQueryToReceivableUsers(
+        searchFlag,
         sendUserDocId,
         rejectionIds,
         sendPostRef,
@@ -93,26 +95,26 @@ async function getRejectionIdsByQueryToPosts(postDocId: string): Promise<string[
 }
 
 async function getSelectedIdByQueryToReceivableUsers(
-  useBool: boolean,
+  searchFlag: boolean,
   sendUserDocId: string,
   rejectionIds: string[],
   sendPostRef: admin.firestore.DocumentReference<admin.firestore.DocumentData>,
 ) {
-  let selectedDoc = await queryToReceivableUsers(useBool, sendUserDocId, rejectionIds);
+  let selectedDoc = await queryToReceivableUsers(searchFlag, sendUserDocId, rejectionIds);
   if (selectedDoc == null) {
-    useBool = !useBool;
+    searchFlag = !searchFlag;
 
-    log.debug(`receivabled users query is null / convert useBool : ${useBool}`);
+    log.debug(`receivabled users query is null / convert searchFlag : ${searchFlag}`);
 
     await firestore.runTransaction(async (transaction) => {
       // change use bool in global varables collection
-      transaction.update(sendPostRef, { [FIELD.USEBOOL]: useBool });
+      transaction.update(sendPostRef, { [FIELD.SEARCHFLAG]: searchFlag });
     });
 
-    await resetSendUserInReceivableCollection(useBool, sendUserDocId);
+    await resetSendUserInReceivableCollection(searchFlag, sendUserDocId);
 
     log.debug(`retry query to receivable users`);
-    selectedDoc = await queryToReceivableUsers(useBool, sendUserDocId, rejectionIds);
+    selectedDoc = await queryToReceivableUsers(searchFlag, sendUserDocId, rejectionIds);
   }
 
   if (selectedDoc == null) {
@@ -122,11 +124,11 @@ async function getSelectedIdByQueryToReceivableUsers(
   // update isReceived flag
   const receivableUserRef = firestore.collection(COLLECTION.RECEIVABLEUSERS).doc(selectedDoc?.id!);
 
-  await receivableUserRef.update({ [FIELD.ISRECEIVED]: !useBool });
+  await receivableUserRef.update({ [FIELD.SEARCHFLAG]: !searchFlag });
 
   // const selectedUserId = selectedDoc?.get(FIELD.USERDOCID);
   const selectedUserId = selectedDoc?.id!;
-  return { useBool, selectedUserId };
+  return { searchFlag, selectedUserId };
 }
 
 async function resetSendUserInReceivableCollection(resetFlag: boolean, userDocId: string) {
@@ -150,11 +152,11 @@ async function resetSendUserInReceivableCollection(resetFlag: boolean, userDocId
     .firestore()
     .collection(COLLECTION.RECEIVABLEUSERS)
     .doc(userDocId)
-    .update({ [FIELD.ISRECEIVED]: resetFlag });
+    .update({ [FIELD.SEARCHFLAG]: resetFlag });
 }
 
 async function queryToReceivableUsers(
-  useBool: boolean,
+  searchFlag: boolean,
   sendUserDocId: string,
   rejectionIds: string[],
 ): Promise<admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData> | null> {
@@ -163,12 +165,12 @@ async function queryToReceivableUsers(
 
   const randomKey = receivableUsersCollectionRef.doc().id;
   log.debug(
-    `generated search key : ${randomKey} / useBool : ${useBool} / send User Doc id : ${sendUserDocId}`,
+    `generated search key : ${randomKey} / searchFlag : ${searchFlag} / send User Doc id : ${sendUserDocId}`,
   );
 
   const gteQuerySnapshot = await receivableUsersCollectionRef
     .where(admin.firestore.FieldPath.documentId(), 'not-in', [sendUserDocId, ...rejectionIds])
-    .where(FIELD.ISRECEIVED, '==', useBool)
+    .where(FIELD.SEARCHFLAG, '==', searchFlag)
     .where(admin.firestore.FieldPath.documentId(), '>=', randomKey)
     .limit(1)
     .get();
@@ -184,7 +186,7 @@ async function queryToReceivableUsers(
   } else {
     const ltQuerySnapshot = await receivableUsersCollectionRef
       .where(admin.firestore.FieldPath.documentId(), 'not-in', [sendUserDocId, ...rejectionIds])
-      .where(FIELD.ISRECEIVED, '==', useBool)
+      .where(FIELD.SEARCHFLAG, '==', searchFlag)
       .where(admin.firestore.FieldPath.documentId(), '<', randomKey)
       .limit(1)
       .get();
