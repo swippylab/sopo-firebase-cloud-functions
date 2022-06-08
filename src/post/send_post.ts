@@ -7,14 +7,13 @@ const log = functions.logger;
 const firestore = admin.firestore();
 interface sendPostToUserArgsType {
   postDocId: string;
-  userDocId: string;
 }
 
 export default async function sendPostToUser({
   postDocId,
-  userDocId: sendUserDocId,
-}: sendPostToUserArgsType) {
-  log.debug(`start send post / send user : ${sendUserDocId} / post : ${postDocId}`);
+}: // userDocId: sendUserDocId,
+sendPostToUserArgsType) {
+  log.debug(`start send post / post : ${postDocId}`);
 
   // 1. get globalVariables/systemPost
   const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
@@ -22,69 +21,122 @@ export default async function sendPostToUser({
   let isUsingExtra = false;
   let searchFlag = false;
 
+  let isProcessPendingPost = false;
+
+  // 2. reserve extra flag, check receivable count
   await firestore.runTransaction(async (transaction) => {
     const sendPostDocument = await transaction.get(sendPostRef);
 
-    isUsingExtra = sendPostDocument.get(FIELD.ISUSINGEXTRA);
-    searchFlag = sendPostDocument.get(FIELD.SEARCHFLAG);
+    const sendPostData = sendPostDocument.data()!;
+
+    isUsingExtra = sendPostData[FIELD.ISUSINGEXTRA];
+    searchFlag = sendPostData[FIELD.SEARCHFLAG];
+
+    const totalReceivableCount = sendPostData[FIELD.TOTAlRECEIVABLE];
+    const receivableCount = sendPostData[FIELD.RECEIVABLECOUNT];
 
     log.debug(
-      `get global variables / send post, searchFlag : ${searchFlag}, useExtra : ${isUsingExtra}`,
+      `get global variables / send post, searchFlag : ${searchFlag}, isUsingExtra : ${isUsingExtra}, receivableCount: ${receivableCount}, totalReceivableCount: ${totalReceivableCount}`,
     );
+    if (totalReceivableCount >= receivableCount) {
+      // reset count, reverse flag
+      searchFlag = !searchFlag;
 
-    // toggle extra flag
-    transaction.update(sendPostRef, { [FIELD.ISUSINGEXTRA]: !isUsingExtra });
+      log.debug(`reverse searchFlag : ${searchFlag} / reset receivableCount`);
+
+      transaction.update(sendPostRef, {
+        [FIELD.ISUSINGEXTRA]: !isUsingExtra,
+        [FIELD.SEARCHFLAG]: searchFlag,
+        [FIELD.RECEIVABLECOUNT]: 0,
+      });
+
+      isProcessPendingPost = true;
+    } else {
+      transaction.update(sendPostRef, { [FIELD.ISUSINGEXTRA]: !isUsingExtra });
+    }
   });
 
-  // 2. query rejection user by this post
-  let rejectionIds: string[] = await getRejectionIdsByQueryToPosts(postDocId);
+  // 3. process pending posts
+  if (isProcessPendingPost) {
+    log.debug(`start pend posts process`);
+    const pendingPostsRef = firestore.collection(COLLECTION.PENDINGPOSTS);
 
-  let selectedUserId = null;
+    const pendPostsSnapshot = await pendingPostsRef.orderBy(FIELD.CREATEDDATE).get();
 
-  // 3. query(find doc)
-  if (!isUsingExtra) {
-    ({ searchFlag: searchFlag, selectedUserId } = await getSelectedIdByQueryToReceivableUsers(
-      searchFlag,
-      sendUserDocId,
-      rejectionIds,
-      sendPostRef,
-    ));
-  } else {
-    const selectedDoc = await queryToExtraReceivableUsers(sendUserDocId, rejectionIds);
+    pendPostsSnapshot.forEach(async (doc) => {
+      const p_postDocId = doc.id;
+      const p_result = await sendPostByQuery(p_postDocId, isUsingExtra, searchFlag);
 
-    if (selectedDoc == null) {
-      ({ searchFlag: searchFlag, selectedUserId } = await getSelectedIdByQueryToReceivableUsers(
-        searchFlag,
-        sendUserDocId,
-        rejectionIds,
-        sendPostRef,
-      ));
-    } else {
-      selectedUserId = selectedDoc.get(FIELD.USERDOCID);
-
-      // delete selected doc
-      selectedDoc.ref.delete();
-    }
+      if (p_result) {
+        log.debug(`pending posts[${p_postDocId}] delete`);
+        doc.ref.delete();
+      }
+    });
+    log.debug(`end pend posts process`);
   }
 
-  log.debug(`user selected to send : ${selectedUserId}`);
+  // 4. send post to selected user by query
+  const result = await sendPostByQuery(postDocId, isUsingExtra, searchFlag);
 
-  // 4. create doc in newPost collection -> send post
+  // 5. send to pending posts colleciton
+  if (!result) {
+    log.debug(`not found send user id / insert pending collection`);
+    const pendingPostRef = firestore.collection(COLLECTION.PENDINGPOSTS).doc(postDocId);
+    pendingPostRef.set({ [FIELD.CREATEDDATE]: new Date() });
+  }
+}
+
+function setNewPostsCollectionInSelectedUser(
+  selectedUserId: any,
+  postDocId: string,
+): Promise<admin.firestore.WriteResult> {
   const newPostRef = firestore
     .collection(COLLECTION.USERS)
     .doc(selectedUserId)
     .collection(COLLECTION.NEWPOSTS)
     .doc(postDocId);
-  newPostRef.set({ [FIELD.DATE]: new Date() });
+  return newPostRef.set({ [FIELD.DATE]: new Date() });
+}
+
+async function sendPostByQuery(
+  postDocId: string,
+  isUsingExtra: boolean,
+  searchFlag: boolean,
+): Promise<boolean> {
+  let rejectionIds: string[] = await getRejectionIdsByQueryToPosts(postDocId);
+  let linkedIds: string[] = await getLinkedIdsByQueryToPosts(postDocId);
+
+  let selectedUserId = null;
+  if (!isUsingExtra) {
+    selectedUserId = await getSelectedIdByQueryToReceivableUsers({
+      searchFlag,
+      rejectionIds,
+      linkedIds,
+    });
+  } else {
+    selectedUserId = await getSelectedIdByQueryToExtraReceivableUsers({
+      searchFlag,
+      rejectionIds,
+      linkedIds,
+    });
+  }
+
+  if (selectedUserId != null) {
+    log.debug(`send post[${postDocId}] to selected user:  ${selectedUserId}`);
+
+    await setNewPostsCollectionInSelectedUser(selectedUserId, postDocId);
+  }
+
+  return selectedUserId != null;
 }
 
 async function getRejectionIdsByQueryToPosts(postDocId: string): Promise<string[]> {
-  const postRejectionRef = firestore
+  const postRejectionsRef = firestore
     .collection(COLLECTION.POSTS)
     .doc(postDocId)
     .collection(COLLECTION.REJECTIONS);
 
-  const rejectionSnapshot = await postRejectionRef.get();
+  const rejectionSnapshot = await postRejectionsRef.get();
 
   let rejectionIds: string[] = [];
   rejectionSnapshot.forEach((doc) => {
@@ -94,82 +146,117 @@ async function getRejectionIdsByQueryToPosts(postDocId: string): Promise<string[
   return rejectionIds;
 }
 
-async function getSelectedIdByQueryToReceivableUsers(
-  searchFlag: boolean,
-  sendUserDocId: string,
-  rejectionIds: string[],
-  sendPostRef: admin.firestore.DocumentReference<admin.firestore.DocumentData>,
-) {
-  let selectedDoc = await queryToReceivableUsers(searchFlag, sendUserDocId, rejectionIds);
+async function getLinkedIdsByQueryToPosts(postDocId: string): Promise<string[]> {
+  const postlinksRef = firestore
+    .collection(COLLECTION.POSTS)
+    .doc(postDocId)
+    .collection(COLLECTION.LINKS);
+
+  const rejectionSnapshot = await postlinksRef.get();
+
+  let linkedIds: string[] = [];
+  rejectionSnapshot.forEach((doc) => {
+    linkedIds.push(doc.id);
+  });
+
+  return linkedIds;
+}
+
+interface selectedIdQueryArguments {
+  searchFlag?: boolean;
+  rejectionIds: string[];
+  linkedIds: string[];
+}
+
+async function getSelectedIdByQueryToExtraReceivableUsers({
+  searchFlag,
+  rejectionIds,
+  linkedIds,
+}: selectedIdQueryArguments) {
+  // query to extra
+  let selectedDoc = await queryToExtraReceivableUsers({ rejectionIds, linkedIds });
+
+  let selectedUserId = null;
   if (selectedDoc == null) {
-    searchFlag = !searchFlag;
-
-    log.debug(`receivabled users query is null / convert searchFlag : ${searchFlag}`);
-
-    await firestore.runTransaction(async (transaction) => {
-      // change use bool in global varables collection
-      transaction.update(sendPostRef, { [FIELD.SEARCHFLAG]: searchFlag });
+    // retry receivable
+    selectedDoc = await queryToReceivableUsers({
+      searchFlag,
+      rejectionIds,
+      linkedIds,
     });
 
-    await resetSendUserInReceivableCollection(searchFlag, sendUserDocId);
+    if (selectedDoc != null) {
+      selectedUserId = selectedDoc?.id!;
 
-    log.debug(`retry query to receivable users`);
-    selectedDoc = await queryToReceivableUsers(searchFlag, sendUserDocId, rejectionIds);
+      // update isReceived flag
+      const receivableUserRef = firestore
+        .collection(COLLECTION.RECEIVABLEUSERS)
+        .doc(selectedUserId);
+
+      await receivableUserRef.update({ [FIELD.SEARCHFLAG]: !searchFlag });
+    }
+  } else {
+    selectedUserId = selectedDoc.get(FIELD.USERDOCID);
+
+    // delete selected doc
+    selectedDoc.ref.delete();
   }
+
+  return selectedUserId;
+}
+
+async function getSelectedIdByQueryToReceivableUsers({
+  searchFlag,
+  rejectionIds,
+  linkedIds,
+}: selectedIdQueryArguments) {
+  // query
+  let selectedDoc = await queryToReceivableUsers({
+    searchFlag,
+    rejectionIds,
+    linkedIds,
+  });
+
+  let selectedUserId = null;
 
   if (selectedDoc == null) {
-    //Todo: error
+    // retry to extra
+    selectedDoc = await queryToExtraReceivableUsers({ rejectionIds, linkedIds });
+
+    if (selectedDoc != null) {
+      selectedUserId = selectedDoc.get(FIELD.USERDOCID);
+
+      // delete selected doc
+      selectedDoc.ref.delete();
+    }
+    // insert pending collection
+  } else {
+    selectedUserId = selectedDoc?.id!;
+
+    // update isReceived flag
+    const receivableUserRef = firestore.collection(COLLECTION.RECEIVABLEUSERS).doc(selectedUserId);
+
+    await receivableUserRef.update({ [FIELD.SEARCHFLAG]: !searchFlag });
   }
 
-  // update isReceived flag
-  const receivableUserRef = firestore.collection(COLLECTION.RECEIVABLEUSERS).doc(selectedDoc?.id!);
-
-  await receivableUserRef.update({ [FIELD.SEARCHFLAG]: !searchFlag });
-
-  // const selectedUserId = selectedDoc?.get(FIELD.USERDOCID);
-  const selectedUserId = selectedDoc?.id!;
-  return { searchFlag, selectedUserId };
+  return selectedUserId;
 }
 
-async function resetSendUserInReceivableCollection(resetFlag: boolean, userDocId: string) {
-  // const receivableUsersCollectionRef = firestore.collection(COLLECTION.RECEIVABLEUSERS);
-
-  // const sendUserReceivableDocRef = await receivableUsersCollectionRef
-  //   .where(FIELD.USERDOCID, '==', userDocId)
-  //   .get();
-
-  // if (sendUserReceivableDocRef.empty) {
-  //   // something wrong
-  //   // Todo: error processing
-  // }
-
-  // let docId: string = '';
-  // sendUserReceivableDocRef.forEach((doc) => {
-  //   docId = doc.id;
-  // });
-
-  admin
-    .firestore()
-    .collection(COLLECTION.RECEIVABLEUSERS)
-    .doc(userDocId)
-    .update({ [FIELD.SEARCHFLAG]: resetFlag });
-}
-
-async function queryToReceivableUsers(
-  searchFlag: boolean,
-  sendUserDocId: string,
-  rejectionIds: string[],
-): Promise<admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData> | null> {
+async function queryToReceivableUsers({
+  searchFlag,
+  rejectionIds,
+  linkedIds,
+}: selectedIdQueryArguments): Promise<admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData> | null> {
   log.debug(`start queryToReceivableUsers method`);
   const receivableUsersCollectionRef = firestore.collection(COLLECTION.RECEIVABLEUSERS);
 
   const randomKey = receivableUsersCollectionRef.doc().id;
-  log.debug(
-    `generated search key : ${randomKey} / searchFlag : ${searchFlag} / send User Doc id : ${sendUserDocId}`,
-  );
+  log.debug(`generated search key : ${randomKey} / searchFlag : ${searchFlag}`);
+
+  const excludingIds = [...rejectionIds, ...linkedIds];
 
   const gteQuerySnapshot = await receivableUsersCollectionRef
-    .where(admin.firestore.FieldPath.documentId(), 'not-in', [sendUserDocId, ...rejectionIds])
+    .where(admin.firestore.FieldPath.documentId(), 'not-in', excludingIds)
     .where(FIELD.SEARCHFLAG, '==', searchFlag)
     .where(admin.firestore.FieldPath.documentId(), '>=', randomKey)
     .limit(1)
@@ -185,7 +272,7 @@ async function queryToReceivableUsers(
     });
   } else {
     const ltQuerySnapshot = await receivableUsersCollectionRef
-      .where(admin.firestore.FieldPath.documentId(), 'not-in', [sendUserDocId, ...rejectionIds])
+      .where(admin.firestore.FieldPath.documentId(), 'not-in', excludingIds)
       .where(FIELD.SEARCHFLAG, '==', searchFlag)
       .where(admin.firestore.FieldPath.documentId(), '<', randomKey)
       .limit(1)
@@ -203,13 +290,13 @@ async function queryToReceivableUsers(
   return selectedDoc;
 }
 
-async function queryToExtraReceivableUsers(
-  sendUserDocId: string,
-  rejectionIds: string[],
-): Promise<admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData> | null> {
+async function queryToExtraReceivableUsers({
+  rejectionIds,
+  linkedIds,
+}: selectedIdQueryArguments): Promise<admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData> | null> {
   const extraReceivableUsersCollectionRef = firestore.collection(COLLECTION.EXTRARECEIVABLEUSERS);
 
-  log.debug(`search extra receivable users collection / send user : ${sendUserDocId}`);
+  log.debug(`search extra receivable users collection`);
   let selectedDoc = null;
   const maxCount = 10;
   let tryCount = 1;
@@ -230,14 +317,12 @@ async function queryToExtraReceivableUsers(
       gteQuerySnapshot.forEach((doc) => {
         //Todo: gte, lt snapshot callback이 동일한 동작, refactoring가능
         const queryResultDocId = doc.get(FIELD.USERDOCID);
-        if (queryResultDocId !== sendUserDocId) {
-          if (!rejectionIds.includes(queryResultDocId)) {
-            selectedDoc = doc;
-          } else {
-            log.debug(`query result id is included in rejection ids : ${queryResultDocId}`);
-          }
+        if (rejectionIds.includes(queryResultDocId)) {
+          log.debug(`query result id is included in rejection ids : ${queryResultDocId}`);
+        } else if (linkedIds.includes(queryResultDocId)) {
+          log.debug(`query result id is included in linked ids : ${queryResultDocId}`);
         } else {
-          log.debug(`query result id is same with send user id / ${doc.get(FIELD.USERDOCID)}`);
+          selectedDoc = doc;
         }
       });
     } else {
@@ -252,14 +337,12 @@ async function queryToExtraReceivableUsers(
       if (ltQuerySnapshot.size > 0) {
         gteQuerySnapshot.forEach((doc) => {
           const queryResultDocId = doc.get(FIELD.USERDOCID);
-          if (queryResultDocId !== sendUserDocId) {
-            if (!rejectionIds.includes(queryResultDocId)) {
-              selectedDoc = doc;
-            } else {
-              log.debug(`query result id is included in rejection ids : ${queryResultDocId}`);
-            }
+          if (rejectionIds.includes(queryResultDocId)) {
+            log.debug(`query result id is included in rejection ids : ${queryResultDocId}`);
+          } else if (linkedIds.includes(queryResultDocId)) {
+            log.debug(`query result id is included in linked ids : ${queryResultDocId}`);
           } else {
-            log.debug(`query result id is same with send user id / ${queryResultDocId}`);
+            selectedDoc = doc;
           }
         });
       }

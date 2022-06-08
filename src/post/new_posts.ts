@@ -82,7 +82,7 @@ export const newPostHandleUpdateTrigger = functions
     batch.delete(newPostRef);
     // batch.delete(changed.after.ref); // warning으로 상위 코드로 대체하였으나 어느순간부터 warning 안뜸
 
-    batch.commit();
+    const batchPromise = batch.commit();
 
     log.debug(`new Posts trigger commit`);
 
@@ -116,5 +116,8 @@ export const newPostHandleUpdateTrigger = functions
       });
     }
 
-    if (sendFlag) await sendPostToUser({ postDocId, userDocId });
+    // wait for write
+    await batchPromise;
+
+    if (sendFlag) await sendPostToUser({ postDocId });
   });

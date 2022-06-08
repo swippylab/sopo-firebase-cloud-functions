@@ -13,4 +13,5 @@ export const COLLECTION = {
   RECEIVABLEUSERS: 'receivableUsers',
   EXTRARECEIVABLEUSERS: 'extraReceivableUsers',
   GLOBALVARIABLES: 'globalVariables',
+  PENDINGPOSTS: 'pendingPosts',
 };

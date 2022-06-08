@@ -11,4 +11,6 @@ export const FIELD = {
   LASTCONSECUTIVEREJECTEDTIMES: 'lastConsecutiveRejectedTimes',
   ISUSINGEXTRA: 'isUsingExtra',
   SEARCHFLAG: 'searchFlag',
+  TOTAlRECEIVABLE: 'totalReceivable',
+  RECEIVABLECOUNT: 'receivableCount',
 };
