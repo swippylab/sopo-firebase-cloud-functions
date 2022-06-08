@@ -298,7 +298,6 @@ async function queryToExtraReceivableUsers({
     const randomKey = extraReceivableUsersCollectionRef.doc().id;
 
     const gteQuerySnapshot = await extraReceivableUsersCollectionRef
-      // .where(admin.firestore.FieldPath.documentId(), '!=', sendUserDocId)
       .where(admin.firestore.FieldPath.documentId(), '>=', randomKey)
       .limit(1)
       .get();
@@ -307,19 +306,10 @@ async function queryToExtraReceivableUsers({
 
     if (gteQuerySnapshot.size > 0) {
       gteQuerySnapshot.forEach((doc) => {
-        //Todo: gte, lt snapshot callback이 동일한 동작, refactoring가능
-        const queryResultDocId = doc.get(FIELD.USERDOCID);
-        if (rejectionIds.includes(queryResultDocId)) {
-          log.debug(`query result id is included in rejection ids : ${queryResultDocId}`);
-        } else if (linkedIds.includes(queryResultDocId)) {
-          log.debug(`query result id is included in linked ids : ${queryResultDocId}`);
-        } else {
-          selectedDoc = doc;
-        }
+        selectedDoc = validateResultFromQueryToExtra(doc, rejectionIds, linkedIds);
       });
     } else {
       const ltQuerySnapshot = await extraReceivableUsersCollectionRef
-        // .where(admin.firestore.FieldPath.documentId(), '!=', sendUserDocId)
         .where(admin.firestore.FieldPath.documentId(), '<', randomKey)
         .limit(1)
         .get();
@@ -328,14 +318,7 @@ async function queryToExtraReceivableUsers({
 
       if (ltQuerySnapshot.size > 0) {
         gteQuerySnapshot.forEach((doc) => {
-          const queryResultDocId = doc.get(FIELD.USERDOCID);
-          if (rejectionIds.includes(queryResultDocId)) {
-            log.debug(`query result id is included in rejection ids : ${queryResultDocId}`);
-          } else if (linkedIds.includes(queryResultDocId)) {
-            log.debug(`query result id is included in linked ids : ${queryResultDocId}`);
-          } else {
-            selectedDoc = doc;
-          }
+          selectedDoc = validateResultFromQueryToExtra(doc, rejectionIds, linkedIds);
         });
       }
     }
@@ -349,4 +332,20 @@ async function queryToExtraReceivableUsers({
   }
 
   return selectedDoc;
+}
+
+function validateResultFromQueryToExtra(
+  doc: admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData>,
+  rejectionIds: string[],
+  linkedIds: string[],
+): admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData> | null {
+  const queryResultDocId = doc.get(FIELD.USERDOCID);
+  if (rejectionIds.includes(queryResultDocId)) {
+    log.debug(`query result id is included in rejection ids : ${queryResultDocId}`);
+  } else if (linkedIds.includes(queryResultDocId)) {
+    log.debug(`query result id is included in linked ids : ${queryResultDocId}`);
+  } else {
+    return doc;
+  }
+  return null;
 }
