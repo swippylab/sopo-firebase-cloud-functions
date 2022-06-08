@@ -111,24 +111,29 @@ async function sendPostByQuery(
 
   let selectedUserId = null;
   if (!isUsingExtra) {
+    log.debug('try to search user in receivable');
     selectedUserId = await getSelectedIdByQueryToReceivableUsers({
       searchFlag,
       rejectionIds,
       linkedIds,
     });
+
     if (selectedUserId == null) {
+      log.debug('search fail / retry to search user in extra receivable');
       selectedUserId = await getSelectedIdByQueryToExtraReceivableUsers({
         rejectionIds,
         linkedIds,
       });
     }
   } else {
+    log.debug('try to search user in extra receivable');
     selectedUserId = await getSelectedIdByQueryToExtraReceivableUsers({
       rejectionIds,
       linkedIds,
     });
 
     if (selectedUserId == null) {
+      log.debug('search fail / retry to search user in receivable');
       selectedUserId = await getSelectedIdByQueryToReceivableUsers({
         searchFlag,
         rejectionIds,
@@ -234,7 +239,7 @@ async function queryToReceivableUsers({
   rejectionIds,
   linkedIds,
 }: selectedIdQueryArguments): Promise<admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData> | null> {
-  log.debug(`start queryToReceivableUsers method`);
+  log.debug(`search in receivable users collection`);
   const receivableUsersCollectionRef = firestore.collection(COLLECTION.RECEIVABLEUSERS);
 
   const randomKey = receivableUsersCollectionRef.doc().id;
