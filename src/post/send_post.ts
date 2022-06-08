@@ -13,7 +13,7 @@ export default async function sendPostToUser({
   postDocId,
 }: // userDocId: sendUserDocId,
 sendPostToUserArgsType) {
-  log.debug(`start send post / post : ${postDocId}`);
+  log.debug(`start send post : ${postDocId}`);
 
   // 1. get globalVariables/systemPost
   const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
@@ -63,13 +63,16 @@ sendPostToUserArgsType) {
 
     const pendPostsSnapshot = await pendingPostsRef.orderBy(FIELD.CREATEDDATE).get();
 
+    let temp_isUsingExtra = isUsingExtra;
+
     pendPostsSnapshot.forEach(async (doc) => {
       const p_postDocId = doc.id;
-      const p_result = await sendPostByQuery(p_postDocId, isUsingExtra, searchFlag);
+      const p_result = await sendPostByQuery(p_postDocId, temp_isUsingExtra, searchFlag);
 
       if (p_result) {
         log.debug(`pending posts[${p_postDocId}] delete`);
         doc.ref.delete();
+        temp_isUsingExtra = !temp_isUsingExtra;
       }
     });
     log.debug(`end pend posts process`);
