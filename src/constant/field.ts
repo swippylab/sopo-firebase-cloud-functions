@@ -8,8 +8,7 @@ export const FIELD = {
   DATE: 'date',
   REJECTEDDATE: 'rejectedDate',
   LINKEDDATE: 'linkedDate',
-  USEBOOL: 'useBool',
-  USEEXTRA: 'useExtra',
-  ISRECEIVED: 'isReceived',
   LASTCONSECUTIVEREJECTEDTIMES: 'lastConsecutiveRejectedTimes',
+  ISUSINGEXTRA: 'isUsingExtra',
+  SEARCHFLAG: 'searchFlag',
 };

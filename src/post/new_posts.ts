@@ -102,6 +102,8 @@ export const newPostHandleUpdateTrigger = functions
 
         lastConsecutiveRejectedTimes += 1;
 
+        log.debug(`consecutive rejected count : ${lastConsecutiveRejectedTimes}`);
+
         transaction.update(postDocRef, {
           [FIELD.LASTCONSECUTIVEREJECTEDTIMES]: lastConsecutiveRejectedTimes,
         });
@@ -109,6 +111,7 @@ export const newPostHandleUpdateTrigger = functions
         // 연속횟수 초과시 다시 보내지 않음
         if (lastConsecutiveRejectedTimes == CONSECUTIVE_REJECTED_MAX_COUNT) {
           sendFlag = false;
+          log.debug('Do not send anywhere');
         }
       });
     }
