@@ -116,12 +116,25 @@ async function sendPostByQuery(
       rejectionIds,
       linkedIds,
     });
+    if (selectedUserId == null) {
+      selectedUserId = await getSelectedIdByQueryToExtraReceivableUsers({
+        rejectionIds,
+        linkedIds,
+      });
+    }
   } else {
     selectedUserId = await getSelectedIdByQueryToExtraReceivableUsers({
-      searchFlag,
       rejectionIds,
       linkedIds,
     });
+
+    if (selectedUserId == null) {
+      selectedUserId = await getSelectedIdByQueryToReceivableUsers({
+        searchFlag,
+        rejectionIds,
+        linkedIds,
+      });
+    }
   }
 
   if (selectedUserId != null) {
@@ -172,7 +185,6 @@ interface selectedIdQueryArguments {
 }
 
 async function getSelectedIdByQueryToExtraReceivableUsers({
-  searchFlag,
   rejectionIds,
   linkedIds,
 }: selectedIdQueryArguments) {
@@ -180,25 +192,8 @@ async function getSelectedIdByQueryToExtraReceivableUsers({
   let selectedDoc = await queryToExtraReceivableUsers({ rejectionIds, linkedIds });
 
   let selectedUserId = null;
-  if (selectedDoc == null) {
-    // retry receivable
-    selectedDoc = await queryToReceivableUsers({
-      searchFlag,
-      rejectionIds,
-      linkedIds,
-    });
 
-    if (selectedDoc != null) {
-      selectedUserId = selectedDoc?.id!;
-
-      // update isReceived flag
-      const receivableUserRef = firestore
-        .collection(COLLECTION.RECEIVABLEUSERS)
-        .doc(selectedUserId);
-
-      await receivableUserRef.update({ [FIELD.SEARCHFLAG]: !searchFlag });
-    }
-  } else {
+  if (selectedDoc != null) {
     selectedUserId = selectedDoc.get(FIELD.USERDOCID);
 
     // delete selected doc
@@ -222,18 +217,7 @@ async function getSelectedIdByQueryToReceivableUsers({
 
   let selectedUserId = null;
 
-  if (selectedDoc == null) {
-    // retry to extra
-    selectedDoc = await queryToExtraReceivableUsers({ rejectionIds, linkedIds });
-
-    if (selectedDoc != null) {
-      selectedUserId = selectedDoc.get(FIELD.USERDOCID);
-
-      // delete selected doc
-      selectedDoc.ref.delete();
-    }
-    // insert pending collection
-  } else {
+  if (selectedDoc != null) {
     selectedUserId = selectedDoc?.id!;
 
     // update isReceived flag
