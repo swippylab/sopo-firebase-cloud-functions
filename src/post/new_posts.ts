@@ -2,6 +2,7 @@ import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
+import { CONSECUTIVE_REJECTED_MAX_COUNT } from '../constant/limit';
 import linkCountUpdate from './links';
 import sendPostToUser from './send_post';
 
@@ -85,10 +86,32 @@ export const newPostHandleUpdateTrigger = functions
 
     log.debug(`new Posts trigger commit`);
 
+    let sendFlag = true;
+    // post process
     if (isAccepted) {
       log.debug(`start links collection trigger`);
       linkCountUpdate({ firestore, postDocId, userDocId });
+    } else {
+      //get lastConsecutiveRejectedTimes
+      const postDocRef = await firestore.collection(COLLECTION.POSTS).doc(postDocId);
+
+      firestore.runTransaction(async (transaction) => {
+        const postDoc = await transaction.get(postDocRef);
+
+        let lastConsecutiveRejectedTimes = postDoc.get(FIELD.LASTCONSECUTIVEREJECTEDTIMES);
+
+        lastConsecutiveRejectedTimes += 1;
+
+        transaction.update(postDocRef, {
+          [FIELD.LASTCONSECUTIVEREJECTEDTIMES]: lastConsecutiveRejectedTimes,
+        });
+
+        // 연속횟수 초과시 다시 보내지 않음
+        if (lastConsecutiveRejectedTimes == CONSECUTIVE_REJECTED_MAX_COUNT) {
+          sendFlag = false;
+        }
+      });
     }
 
-    await sendPostToUser({ postDocId, userDocId });
+    if (sendFlag) await sendPostToUser({ postDocId, userDocId });
   });

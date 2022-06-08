@@ -11,4 +11,5 @@ export const FIELD = {
   USEBOOL: 'useBool',
   USEEXTRA: 'useExtra',
   ISRECEIVED: 'isReceived',
+  LASTCONSECUTIVEREJECTEDTIMES: 'lastConsecutiveRejectedTimes',
 };

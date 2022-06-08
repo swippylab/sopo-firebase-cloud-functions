@@ -1,0 +1,2 @@
+export const EXTRA_SEARCH_MAX_COUNT = 10;
+export const CONSECUTIVE_REJECTED_MAX_COUNT = 3;
