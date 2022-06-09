@@ -13,7 +13,7 @@ export default async function sendPostToUser({
   postDocId,
 }: // userDocId: sendUserDocId,
 sendPostToUserArgsType) {
-  log.debug(`start send post : ${postDocId}`);
+  log.debug(`[${postDocId}] start send post`);
 
   // 1. get globalVariables/systemPost
   const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
@@ -89,7 +89,7 @@ sendPostToUserArgsType) {
   }
 }
 
-function setDataForSendingPostToUser(
+async function setDataForSendingPostToUser(
   selectedUserId: any,
   postDocId: string,
 ): Promise<[admin.firestore.WriteResult, admin.firestore.WriteResult]> {
@@ -235,6 +235,19 @@ async function getSelectedIdByQueryToReceivableUsers({
   if (selectedDoc != null) {
     selectedUserId = selectedDoc?.id!;
 
+    // up receivableCount in globalVariables
+    const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
+
+    firestore.runTransaction(async (transaction) => {
+      const sendPostDocument = await transaction.get(sendPostRef);
+
+      const receivableCount = sendPostDocument.get(FIELD.RECEIVABLECOUNT);
+      const updateCount = receivableCount + 1;
+      transaction.update(sendPostRef, { [FIELD.RECEIVABLECOUNT]: updateCount });
+
+      log.debug(`update receivable count in globalVariable : ${updateCount}`);
+    });
+
     // update isReceived flag
     const receivableUserRef = firestore.collection(COLLECTION.RECEIVABLEUSERS).doc(selectedUserId);
 
@@ -289,21 +302,6 @@ async function queryToReceivableUsers({
   }
 
   log.debug(`end queryToReceivableUsers method / selectedDoc is null : ${selectedDoc == null}`);
-
-  if (selectedDoc != null) {
-    // up receivableCount in globalVariables
-    const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
-
-    firestore.runTransaction(async (transaction) => {
-      const sendPostDocument = await transaction.get(sendPostRef);
-
-      const receivableCount = sendPostDocument.get(FIELD.RECEIVABLECOUNT);
-      const updateCount = receivableCount + 1;
-      transaction.update(sendPostRef, { [FIELD.RECEIVABLECOUNT]: updateCount });
-
-      log.debug(`update receivable count in globalVariable : ${updateCount}`);
-    });
-  }
 
   return selectedDoc;
 }
@@ -360,11 +358,11 @@ async function queryToExtraReceivableUsers({
   return selectedDoc;
 }
 
-function validateResultFromQueryToExtra(
+async function validateResultFromQueryToExtra(
   doc: FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>,
   rejectionIds: string[],
   linkedIds: string[],
-): FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData> | null {
+): Promise<admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData> | null> {
   const queryResultDocId = doc.get(FIELD.USERDOCID);
   log.debug(`validatioin search extra result id : ${queryResultDocId}`);
   if (rejectionIds.includes(queryResultDocId)) {
