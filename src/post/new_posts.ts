@@ -82,6 +82,10 @@ export const newPostHandleUpdateTrigger = functions
     batch.delete(newPostRef);
     // batch.delete(changed.after.ref); // warning으로 상위 코드로 대체하였으나 어느순간부터 warning 안뜸
 
+    // delete pending new post
+    const pendingNewPostRef = firestore.collection(COLLECTION.PEDINGNEWPOSTS).doc(postDocId);
+    batch.delete(pendingNewPostRef);
+
     const batchPromise = batch.commit();
 
     log.debug(`new Posts trigger commit`);
