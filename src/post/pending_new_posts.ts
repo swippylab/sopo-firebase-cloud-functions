@@ -22,6 +22,8 @@ export const onShceduledHandlePendingNewPosts = functions.pubsub
     const searchLimitDate = new Date();
     searchLimitDate.setHours(searchLimitDate.getHours() - maxWaitHour);
 
+    log.debug(`search limit time : ${searchLimitDate.toString()}`);
+
     const querySnapshot = await pendNewPostsRef.where(FIELD.DATE, '<=', searchLimitDate).get();
 
     querySnapshot.forEach(async (doc) => {

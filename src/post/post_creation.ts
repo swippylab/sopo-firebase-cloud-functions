@@ -69,10 +69,10 @@ export const onCreatePostTrigger = functions
       .collection(COLLECTION.POSTS)
       .doc(postDocId)
       .collection(COLLECTION.LINKS)
-      .doc();
+      .doc(userDocId);
 
     const linkedDate = new Date();
-    const postLinkData = { [FIELD.USERDOCID]: userDocId, [FIELD.LINKEDDATE]: linkedDate };
+    const postLinkData = { /* [FIELD.USERDOCID]: userDocId,  */ [FIELD.LINKEDDATE]: linkedDate };
 
     // extra receivable users collection
     const extraReceivableUserRef = firestore.collection(COLLECTION.EXTRARECEIVABLEUSERS).doc();

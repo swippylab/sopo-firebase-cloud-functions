@@ -2,6 +2,7 @@ import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
+import sendPostToUser from '../post/send_post';
 
 const log = functions.logger;
 
@@ -38,11 +39,11 @@ export const queryTest = functions.https.onRequest(async (request, response) => 
   const searchLimitDate = new Date();
   searchLimitDate.setHours(searchLimitDate.getHours() - 2);
 
-  // print whole
-  const total = await pendNewPostsRef.get();
-  total.forEach((doc) => {
-    log.debug(`${doc.get(FIELD.DATE).toDate().toString()}`);
-  });
+  // // print whole
+  // const total = await pendNewPostsRef.get();
+  // total.forEach((doc) => {
+  //   log.debug(`${doc.get(FIELD.DATE).toDate().toString()}`);
+  // });
 
   log.debug(`search limit time : ${searchLimitDate.toUTCString()}`);
 
@@ -51,8 +52,8 @@ export const queryTest = functions.https.onRequest(async (request, response) => 
   querySnapshot.forEach(async (doc) => {
     log.debug(`[${doc.id}] post received date : ${doc.data().date.toDate()}`);
 
-    // sendPostToUser({ postDocId: doc.id });
-    // doc.ref.delete();
+    sendPostToUser({ postDocId: doc.id });
+    doc.ref.delete();
   });
   response.send('query result size : ' + querySnapshot.size);
 });

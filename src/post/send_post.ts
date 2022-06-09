@@ -38,7 +38,7 @@ sendPostToUserArgsType) {
     log.debug(
       `get global variables / send post, searchFlag : ${searchFlag}, isUsingExtra : ${isUsingExtra}, receivableCount: ${receivableCount}, totalReceivableCount: ${totalReceivableCount}`,
     );
-    if (totalReceivableCount >= receivableCount) {
+    if (totalReceivableCount <= receivableCount) {
       // reset count, reverse flag
       searchFlag = !searchFlag;
 
@@ -181,10 +181,13 @@ async function getLinkedIdsByQueryToPosts(postDocId: string): Promise<string[]> 
     .doc(postDocId)
     .collection(COLLECTION.LINKS);
 
-  const rejectionSnapshot = await postlinksRef.get();
+  const linkedSnapshot = await postlinksRef.get();
+
+  log.debug(`[${postDocId}] post links count : ${linkedSnapshot.size}`);
 
   let linkedIds: string[] = [];
-  rejectionSnapshot.forEach((doc) => {
+  linkedSnapshot.forEach((doc) => {
+    log.debug(`${doc.id}`);
     linkedIds.push(doc.id);
   });
 
