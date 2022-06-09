@@ -4,11 +4,12 @@ import { COLLECTION } from '../constant/collection';
 import sendPostToUser from '../post/send_post';
 
 const firestore = admin.firestore();
+const log = functions.logger;
 
 export const onUpdateUserTrigger = functions
   .runWith({})
   .firestore.document(`${COLLECTION.USERS}/{userDocId}`)
-  .onUpdate((change, context) => {
+  .onUpdate(async (change, context) => {
     const userDocId = context.params.userDocId;
 
     const newValue = change.after.data();
@@ -16,6 +17,7 @@ export const onUpdateUserTrigger = functions
     const previousValue = change.before.data();
 
     if (previousValue.deleteDate !== newValue.deleteDate) {
+      log.debug(`<${userDocId}> deleteDate update`);
       onUpdateDeletedDate(userDocId);
     }
   });
