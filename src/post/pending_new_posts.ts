@@ -11,7 +11,10 @@ const log = functions.logger;
 
 export const onShceduledHandlePendingNewPosts = functions.pubsub
   .schedule(`0 */${executionDelayHour} * * *`)
+  // .schedule(`* * * * *`)
   .onRun(async (/* context */) => {
+    log.debug('start schedule function');
+
     const firestore = admin.firestore();
 
     const pendNewPostsRef = firestore.collection(COLLECTION.PEDINGNEWPOSTS);

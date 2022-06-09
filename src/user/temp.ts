@@ -38,10 +38,18 @@ export const queryTest = functions.https.onRequest(async (request, response) => 
   const searchLimitDate = new Date();
   searchLimitDate.setHours(searchLimitDate.getHours() - 2);
 
+  // print whole
+  const total = await pendNewPostsRef.get();
+  total.forEach((doc) => {
+    log.debug(`${doc.get(FIELD.DATE).toDate().toString()}`);
+  });
+
+  log.debug(`search limit time : ${searchLimitDate.toUTCString()}`);
+
   const querySnapshot = await pendNewPostsRef.where(FIELD.DATE, '<=', searchLimitDate).get();
 
   querySnapshot.forEach(async (doc) => {
-    log.debug(`[${doc.id}] post received date : ${doc.get(FIELD.DATE)}`);
+    log.debug(`[${doc.id}] post received date : ${doc.data().date.toDate()}`);
 
     // sendPostToUser({ postDocId: doc.id });
     // doc.ref.delete();
