@@ -89,16 +89,24 @@ sendPostToUserArgsType) {
   }
 }
 
-function setNewPostsCollectionInSelectedUser(
+function setDataForSendingPostToUser(
   selectedUserId: any,
   postDocId: string,
-): Promise<admin.firestore.WriteResult> {
+): Promise<[admin.firestore.WriteResult, admin.firestore.WriteResult]> {
   const newPostRef = firestore
     .collection(COLLECTION.USERS)
     .doc(selectedUserId)
     .collection(COLLECTION.NEWPOSTS)
     .doc(postDocId);
-  return newPostRef.set({ [FIELD.DATE]: new Date() });
+
+  const pendingNewPostRef = firestore.collection(COLLECTION.PEDINGNEWPOSTS).doc(postDocId);
+
+  const setData = { [FIELD.DATE]: new Date() };
+
+  const newPostPromise = newPostRef.set(setData);
+  const pendingNewPostsPromise = pendingNewPostRef.set(setData);
+  // return newPostRef.set({ [FIELD.DATE]: new Date() });
+  return Promise.all([newPostPromise, pendingNewPostsPromise]);
 }
 
 async function sendPostByQuery(
@@ -145,7 +153,7 @@ async function sendPostByQuery(
   if (selectedUserId != null) {
     log.debug(`send post[${postDocId}] to selected user:  ${selectedUserId}`);
 
-    await setNewPostsCollectionInSelectedUser(selectedUserId, postDocId);
+    await setDataForSendingPostToUser(selectedUserId, postDocId);
   }
 
   return selectedUserId != null;
@@ -335,10 +343,10 @@ async function queryToExtraReceivableUsers({
 }
 
 function validateResultFromQueryToExtra(
-  doc: admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData>,
+  doc: FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>,
   rejectionIds: string[],
   linkedIds: string[],
-): admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData> | null {
+): FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData> | null {
   const queryResultDocId = doc.get(FIELD.USERDOCID);
   if (rejectionIds.includes(queryResultDocId)) {
     log.debug(`query result id is included in rejection ids : ${queryResultDocId}`);

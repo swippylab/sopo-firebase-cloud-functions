@@ -29,6 +29,9 @@
     },
     "functions" : {
  
+    },
+    "pubsub" : {
+      
     }
   }
 }
