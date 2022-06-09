@@ -24,6 +24,8 @@ export const newPostHandleUpdateTrigger = functions
 
     const batch = firestore.batch();
 
+    log.debug(`[${postDocId}] post is accepted : ${isAccepted} by <${userDocId}>`);
+
     if (isAccepted) {
       const userSubCollectionData = { [FIELD.DATE]: receivedDate };
 
@@ -56,8 +58,6 @@ export const newPostHandleUpdateTrigger = functions
 
       // write at liniks Collection
       batch.set(postLinkRef, postLinkData);
-
-      log.debug(`ready for isAccepted true`);
     } else {
       const postRejectionRef = firestore
         .collection(COLLECTION.POSTS)
@@ -69,8 +69,6 @@ export const newPostHandleUpdateTrigger = functions
         // [FIELD.USERDOCID]: userDocId,
         [FIELD.REJECTEDDATE]: new Date(),
       });
-
-      log.debug(`ready for isAccepted false`);
     }
 
     // delete userNewPost / common work
@@ -88,13 +86,12 @@ export const newPostHandleUpdateTrigger = functions
 
     const batchPromise = batch.commit();
 
-    log.debug(`new Posts trigger commit`);
+    log.debug(`[${postDocId}] new Posts trigger batch commit(async)`);
 
     let sendFlag = true;
     // post process
     if (isAccepted) {
-      log.debug(`start links collection trigger`);
-      linkCountUpdate({ firestore, postDocId, userDocId });
+      linkCountUpdate({ postDocId, userDocId });
     } else {
       //get lastConsecutiveRejectedTimes
       const postDocRef = await firestore.collection(COLLECTION.POSTS).doc(postDocId);
@@ -127,5 +124,9 @@ export const newPostHandleUpdateTrigger = functions
     // wait for write
     await batchPromise;
 
-    if (sendFlag) await sendPostToUser({ postDocId });
+    if (sendFlag) {
+      // async로 동작하도록 await 제거
+      log.debug(`${[postDocId]} post to somewhere from [${userDocId}]`);
+      sendPostToUser({ postDocId });
+    }
   });

@@ -3,18 +3,16 @@ import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
 
+const firestore = admin.firestore();
+const log = functions.logger;
 interface linkCountUpdateArgsType {
-  firestore: admin.firestore.Firestore;
   postDocId: string;
   userDocId: string;
 }
 
-export default function linkCountUpdate({
-  firestore,
-  postDocId,
-  userDocId,
-}: linkCountUpdateArgsType) {
-  const log = functions.logger;
+export default async function linkCountUpdate({ postDocId, userDocId }: linkCountUpdateArgsType) {
+  log.debug(`[${postDocId}] update linked count`);
+
   // links collection create trigger
   // get post document with post id
   const postDocRef = firestore.collection(COLLECTION.POSTS).doc(postDocId);
@@ -42,7 +40,7 @@ export default function linkCountUpdate({
       [FIELD.LINKEDCOUNT]: updateLinkedUserIds.length,
     });
 
-    log.debug(`update previewPost, post transaction end`);
+    log.debug(`[${postDocId}] update previewPost, post transaction end`);
   });
 }
 
