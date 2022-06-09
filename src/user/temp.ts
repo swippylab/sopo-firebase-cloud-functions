@@ -57,3 +57,25 @@ export const queryTest = functions.https.onRequest(async (request, response) => 
   });
   response.send('query result size : ' + querySnapshot.size);
 });
+
+export const queryTest2 = functions.https.onRequest(async (request, response) => {
+  const receivableUsersCollectionRef = admin.firestore().collection(COLLECTION.RECEIVABLEUSERS);
+
+  // const randomKey = receivableUsersCollectionRef.doc().id;
+  // log.debug(`generated search key : ${randomKey} `);
+
+  const excludingIds = [...['ccc', 'bbb'], ...['aaa']];
+
+  const gteQuerySnapshot = await receivableUsersCollectionRef
+    .where(admin.firestore.FieldPath.documentId(), 'not-in', excludingIds)
+    // .where(FIELD.SEARCHFLAG, '==', searchFlag)
+    // .where(admin.firestore.FieldPath.documentId(), '>=', randomKey)
+    // .limit(1)
+    .get();
+
+  gteQuerySnapshot.forEach((doc) => {
+    log.debug(`[${doc.id}]`);
+  });
+
+  response.send(`search result size : ${gteQuerySnapshot.size}`);
+});

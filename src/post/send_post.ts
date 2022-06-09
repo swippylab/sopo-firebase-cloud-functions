@@ -187,7 +187,6 @@ async function getLinkedIdsByQueryToPosts(postDocId: string): Promise<string[]> 
 
   let linkedIds: string[] = [];
   linkedSnapshot.forEach((doc) => {
-    log.debug(`${doc.id}`);
     linkedIds.push(doc.id);
   });
 
@@ -290,6 +289,22 @@ async function queryToReceivableUsers({
   }
 
   log.debug(`end queryToReceivableUsers method / selectedDoc is null : ${selectedDoc == null}`);
+
+  if (selectedDoc != null) {
+    // up receivableCount in globalVariables
+    const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
+
+    firestore.runTransaction(async (transaction) => {
+      const sendPostDocument = await transaction.get(sendPostRef);
+
+      const receivableCount = sendPostDocument.get(FIELD.RECEIVABLECOUNT);
+      const updateCount = receivableCount + 1;
+      transaction.update(sendPostRef, { [FIELD.RECEIVABLECOUNT]: updateCount });
+
+      log.debug(`update receivable count in globalVariable : ${updateCount}`);
+    });
+  }
+
   return selectedDoc;
 }
 
@@ -328,7 +343,7 @@ async function queryToExtraReceivableUsers({
       log.debug(`extra receivable user search lt size : ${ltQuerySnapshot.size}`);
 
       if (ltQuerySnapshot.size > 0) {
-        gteQuerySnapshot.forEach((doc) => {
+        ltQuerySnapshot.forEach((doc) => {
           selectedDoc = validateResultFromQueryToExtra(doc, rejectionIds, linkedIds);
         });
       }
@@ -351,6 +366,7 @@ function validateResultFromQueryToExtra(
   linkedIds: string[],
 ): FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData> | null {
   const queryResultDocId = doc.get(FIELD.USERDOCID);
+  log.debug(`validatioin search extra result id : ${queryResultDocId}`);
   if (rejectionIds.includes(queryResultDocId)) {
     log.debug(`query result id is included in rejection ids : ${queryResultDocId}`);
   } else if (linkedIds.includes(queryResultDocId)) {

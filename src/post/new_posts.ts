@@ -28,7 +28,7 @@ export const newPostHandleUpdateTrigger = functions
       const userSubCollectionData = { [FIELD.DATE]: receivedDate };
 
       const linkedDate = new Date();
-      const postLinkData = { [FIELD.USERDOCID]: userDocId, [FIELD.LINKEDDATE]: linkedDate };
+      const postLinkData = { /* [FIELD.USERDOCID]: userDocId, */ [FIELD.LINKEDDATE]: linkedDate };
 
       const userReceivePostRef = firestore
         .collection(COLLECTION.USERS)
@@ -46,7 +46,7 @@ export const newPostHandleUpdateTrigger = functions
         .collection(COLLECTION.POSTS)
         .doc(postDocId)
         .collection(COLLECTION.LINKS)
-        .doc();
+        .doc(userDocId);
 
       // write at userAllPosts Collection
       batch.set(userAllPostRef, userSubCollectionData);
@@ -103,6 +103,10 @@ export const newPostHandleUpdateTrigger = functions
         const postDoc = await transaction.get(postDocRef);
 
         let lastConsecutiveRejectedTimes = postDoc.get(FIELD.LASTCONSECUTIVEREJECTEDTIMES);
+
+        if (!lastConsecutiveRejectedTimes) {
+          lastConsecutiveRejectedTimes = 0;
+        }
 
         lastConsecutiveRejectedTimes += 1;
 
