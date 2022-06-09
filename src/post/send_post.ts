@@ -7,13 +7,32 @@ const log = functions.logger;
 const firestore = admin.firestore();
 interface sendPostToUserArgsType {
   postDocId: string;
+  userDocId: string;
 }
 
 export default async function sendPostToUser({
   postDocId,
+  userDocId: sendUserDocId,
 }: // userDocId: sendUserDocId,
 sendPostToUserArgsType) {
   log.debug(`[${postDocId}] start send post`);
+
+  // 보내기 전에 new Posts doc들을 지운다
+  const deleteBatch = firestore.batch();
+  // delete userNewPost
+  const newPostRef = firestore
+    .collection(COLLECTION.USERS)
+    .doc(sendUserDocId)
+    .collection(COLLECTION.NEWPOSTS)
+    .doc(postDocId);
+  deleteBatch.delete(newPostRef);
+  // batch.delete(changed.after.ref); // warning으로 상위 코드로 대체하였으나 어느순간부터 warning 안뜸
+
+  // delete pending new post
+  const pendingNewPostRef = firestore.collection(COLLECTION.PEDINGNEWPOSTS).doc(postDocId);
+  deleteBatch.delete(pendingNewPostRef);
+
+  await deleteBatch.commit();
 
   // 1. get globalVariables/systemPost
   const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
@@ -101,7 +120,7 @@ async function setDataForSendingPostToUser(
 
   const pendingNewPostRef = firestore.collection(COLLECTION.PEDINGNEWPOSTS).doc(postDocId);
 
-  const setData = { [FIELD.DATE]: new Date() };
+  const setData = { [FIELD.DATE]: new Date(), [FIELD.USERDOCID]: selectedUserId };
 
   const newPostPromise = newPostRef.set(setData);
   const pendingNewPostsPromise = pendingNewPostRef.set(setData);

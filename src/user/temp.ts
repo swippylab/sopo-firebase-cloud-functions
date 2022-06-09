@@ -52,7 +52,7 @@ export const queryTest = functions.https.onRequest(async (request, response) => 
   querySnapshot.forEach(async (doc) => {
     log.debug(`[${doc.id}] post received date : ${doc.data().date.toDate()}`);
 
-    sendPostToUser({ postDocId: doc.id });
+    sendPostToUser({ postDocId: doc.id, userDocId: doc.data().userDocId });
     doc.ref.delete();
   });
   response.send('query result size : ' + querySnapshot.size);

@@ -92,7 +92,7 @@ export const onCreatePostTrigger = functions
 
     log.debug('batch commit');
 
-    await sendPostToUser({ postDocId });
+    await sendPostToUser({ postDocId, userDocId });
 
     // batchResultList.forEach((element) => {
     //   if (element.writeTime) log.debug(`write time : ${element.writeTime.toDate()}`);

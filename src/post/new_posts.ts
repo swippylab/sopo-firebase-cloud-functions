@@ -71,19 +71,6 @@ export const newPostHandleUpdateTrigger = functions
       });
     }
 
-    // delete userNewPost / common work
-    const newPostRef = firestore
-      .collection(COLLECTION.USERS)
-      .doc(userDocId)
-      .collection(COLLECTION.NEWPOSTS)
-      .doc(postDocId);
-    batch.delete(newPostRef);
-    // batch.delete(changed.after.ref); // warning으로 상위 코드로 대체하였으나 어느순간부터 warning 안뜸
-
-    // delete pending new post
-    const pendingNewPostRef = firestore.collection(COLLECTION.PEDINGNEWPOSTS).doc(postDocId);
-    batch.delete(pendingNewPostRef);
-
     const batchPromise = batch.commit();
 
     log.debug(`[${postDocId}] new Posts trigger batch commit(async)`);
@@ -127,6 +114,6 @@ export const newPostHandleUpdateTrigger = functions
     if (sendFlag) {
       // async로 동작하도록 await 제거
       log.debug(`${[postDocId]} post to somewhere from [${userDocId}]`);
-      sendPostToUser({ postDocId });
+      sendPostToUser({ postDocId, userDocId });
     }
   });

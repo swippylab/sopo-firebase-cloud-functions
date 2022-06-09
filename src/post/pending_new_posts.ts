@@ -27,9 +27,13 @@ export const onShceduledHandlePendingNewPosts = functions.pubsub
     const querySnapshot = await pendNewPostsRef.where(FIELD.DATE, '<=', searchLimitDate).get();
 
     querySnapshot.forEach(async (doc) => {
-      log.debug(`[${doc.id}] post received date : ${doc.get(FIELD.DATE)}`);
+      const postDocId = doc.id;
+      const userDocId = doc.get(FIELD.USERDOCID);
+      log.debug(
+        `[${doc.id}] post received date : ${doc.get(FIELD.DATE)} / user with doc : <${userDocId}> `,
+      );
 
-      sendPostToUser({ postDocId: doc.id });
+      sendPostToUser({ postDocId, userDocId });
       doc.ref.delete();
     });
   });
