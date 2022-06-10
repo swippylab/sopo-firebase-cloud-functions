@@ -13,4 +13,5 @@ export const FIELD = {
   SEARCHFLAG: 'searchFlag',
   TOTAlRECEIVABLE: 'totalReceivable',
   RECEIVABLECOUNT: 'receivableCount',
+  ISACTIVATED: 'isActivated',
 };
