@@ -112,12 +112,14 @@ async function setDataForSendingPostToUser(
   selectedUserId: any,
   postDocId: string,
 ): Promise<[admin.firestore.WriteResult, admin.firestore.WriteResult]> {
+  // user new posts
   const newPostRef = firestore
     .collection(COLLECTION.USERS)
     .doc(selectedUserId)
     .collection(COLLECTION.NEWPOSTS)
     .doc(postDocId);
 
+  // pending new posts
   const pendingNewPostRef = firestore.collection(COLLECTION.PEDINGNEWPOSTS).doc(postDocId);
 
   const setData = { [FIELD.DATE]: new Date(), [FIELD.USERDOCID]: selectedUserId };
@@ -173,6 +175,8 @@ async function sendPostByQuery(
     log.debug(`send post[${postDocId}] to selected user:  ${selectedUserId}`);
 
     await setDataForSendingPostToUser(selectedUserId, postDocId);
+
+    //Todo: send fcm
   }
 
   return selectedUserId != null;
