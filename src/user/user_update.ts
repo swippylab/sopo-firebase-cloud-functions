@@ -1,10 +1,39 @@
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
+import { DOCUMENT } from '../constant/document';
+import { FIELD } from '../constant/field';
 import sendPostToUser from '../post/send_post';
 
 const firestore = admin.firestore();
 const log = functions.logger;
+
+export const onCreateUserTrigger = functions
+  .runWith({})
+  .firestore.document(`${COLLECTION.USERS}/{userDocId}`)
+  .onCreate((snapshot, context) => {
+    const userDocId = context.params.userDocId;
+
+    const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
+
+    const receivableUserRef = firestore.collection(COLLECTION.RECEIVABLEUSERS).doc(userDocId);
+
+    firestore.runTransaction(async (transaction) => {
+      const sendPostDocument = await transaction.get(sendPostRef);
+
+      // initial send post
+      if (!sendPostDocument.exists) {
+        await initializeSendpostGlobalVariables(sendPostRef);
+      }
+
+      const totalReceivable = sendPostDocument.get(FIELD.TOTAlRECEIVABLE);
+      const searchFlag = sendPostDocument.get(FIELD.SEARCHFLAG);
+
+      transaction.set(receivableUserRef, { [FIELD.SEARCHFLAG]: searchFlag });
+
+      transaction.update(sendPostRef, { [FIELD.TOTAlRECEIVABLE]: totalReceivable + 1 });
+    });
+  });
 
 export const onUpdateUserTrigger = functions
   .runWith({})
@@ -22,6 +51,17 @@ export const onUpdateUserTrigger = functions
     }
   });
 
+async function initializeSendpostGlobalVariables(
+  sendPostRef: admin.firestore.DocumentReference<admin.firestore.DocumentData>,
+) {
+  await sendPostRef.set({
+    [FIELD.SEARCHFLAG]: false,
+    [FIELD.ISUSINGEXTRA]: false,
+    [FIELD.TOTAlRECEIVABLE]: 0,
+    [FIELD.RECEIVABLECOUNT]: 0,
+  });
+}
+
 async function onUpdateDeletedDate(userDocId: string) {
   const newPostsSnapshot = await firestore
     .collection(COLLECTION.USERS)
@@ -31,5 +71,19 @@ async function onUpdateDeletedDate(userDocId: string) {
 
   newPostsSnapshot.forEach((doc) => {
     sendPostToUser({ postDocId: doc.id, userDocId });
+  });
+
+  // totalReceivable count update and remove receivable users
+  const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
+  const receivableUserRef = firestore.collection(COLLECTION.RECEIVABLEUSERS).doc(userDocId);
+
+  firestore.runTransaction(async (transaction) => {
+    const sendPostDocument = await transaction.get(sendPostRef);
+
+    const totalReceivable = sendPostDocument.get(FIELD.TOTAlRECEIVABLE);
+
+    transaction.delete(receivableUserRef);
+
+    transaction.update(sendPostRef, { [FIELD.TOTAlRECEIVABLE]: totalReceivable - 1 });
   });
 }
