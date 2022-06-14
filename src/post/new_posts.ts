@@ -19,8 +19,8 @@ export const newPostHandleUpdateTrigger = functions
     const postDocId: string = context.params.postDocId;
 
     const updateData = changed.after.data();
-    const receivedDate: Date = updateData.date;
-    const isAccepted: boolean = updateData.isAccepted;
+    const receivedDate: Date = updateData[FIELD.DATE];
+    const isAccepted: boolean = updateData[FIELD.ISACCEPTED];
 
     const batch = firestore.batch();
 

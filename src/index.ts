@@ -8,4 +8,4 @@ export * from './post/pending_new_posts';
 export * from './post/post_creation';
 export * from './post/replies';
 export * from './user/temp';
-export * from './user/user_update';
+export * from './user/user_trigger';

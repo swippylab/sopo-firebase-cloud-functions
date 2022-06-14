@@ -13,6 +13,10 @@ export const onShceduledHandlePendingNewPosts = functions.pubsub
   .schedule(`0 */${executionDelayHour} * * *`)
   // .schedule(`* * * * *`)
   .onRun(async (/* context */) => {
+    await handlePendingNewPosts();
+  });
+
+  export async function handlePendingNewPosts() {
     log.debug('start schedule function');
 
     const firestore = admin.firestore();
@@ -36,4 +40,6 @@ export const onShceduledHandlePendingNewPosts = functions.pubsub
       sendPostToUser({ postDocId, userDocId });
       doc.ref.delete();
     });
-  });
+  }
+
+ 

@@ -1,10 +1,13 @@
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
-import { COLLECTION } from '../constant/collection';
-import { FIELD } from '../constant/field';
-import sendPostToUser from '../post/send_post';
+import { handlePendingNewPosts } from '../post/pending_new_posts';
 
-const log = functions.logger;
+// const log = functions.logger;
+
+export const callHandlePendingNewPosts = functions.https.onRequest(async (request, response) => {
+  await handlePendingNewPosts().catch((err) => response.send('fail handle new posts start')); 
+  response.send('start handle new posts');
+});
 
 export const helloFireStore = functions.https.onRequest(async (request, response) => {
   admin
@@ -31,51 +34,51 @@ export const helloStroage = functions.https.onRequest(async (request, response) 
     });
 });
 
-export const queryTest = functions.https.onRequest(async (request, response) => {
-  const firestore = admin.firestore();
+// export const queryTest = functions.https.onRequest(async (request, response) => {
+//   const firestore = admin.firestore();
 
-  const pendNewPostsRef = firestore.collection(COLLECTION.PEDINGNEWPOSTS);
+//   const pendNewPostsRef = firestore.collection(COLLECTION.PEDINGNEWPOSTS);
 
-  const searchLimitDate = new Date();
-  searchLimitDate.setHours(searchLimitDate.getHours() - 2);
+//   const searchLimitDate = new Date();
+//   searchLimitDate.setHours(searchLimitDate.getHours() - 2);
 
-  // // print whole
-  // const total = await pendNewPostsRef.get();
-  // total.forEach((doc) => {
-  //   log.debug(`${doc.get(FIELD.DATE).toDate().toString()}`);
-  // });
+//   // // print whole
+//   // const total = await pendNewPostsRef.get();
+//   // total.forEach((doc) => {
+//   //   log.debug(`${doc.get(FIELD.DATE).toDate().toString()}`);
+//   // });
 
-  log.debug(`search limit time : ${searchLimitDate.toUTCString()}`);
+//   log.debug(`search limit time : ${searchLimitDate.toUTCString()}`);
 
-  const querySnapshot = await pendNewPostsRef.where(FIELD.DATE, '<=', searchLimitDate).get();
+//   const querySnapshot = await pendNewPostsRef.where(FIELD.DATE, '<=', searchLimitDate).get();
 
-  querySnapshot.forEach(async (doc) => {
-    log.debug(`[${doc.id}] post received date : ${doc.data().date.toDate()}`);
+//   querySnapshot.forEach(async (doc) => {
+//     log.debug(`[${doc.id}] post received date : ${doc.data().date.toDate()}`);
 
-    sendPostToUser({ postDocId: doc.id, userDocId: doc.data().userDocId });
-    doc.ref.delete();
-  });
-  response.send('query result size : ' + querySnapshot.size);
-});
+//     sendPostToUser({ postDocId: doc.id, userDocId: doc.data().userDocId });
+//     doc.ref.delete();
+//   });
+//   response.send('query result size : ' + querySnapshot.size);
+// });
 
-export const queryTest2 = functions.https.onRequest(async (request, response) => {
-  const receivableUsersCollectionRef = admin.firestore().collection(COLLECTION.RECEIVABLEUSERS);
+// export const queryTest2 = functions.https.onRequest(async (request, response) => {
+//   const receivableUsersCollectionRef = admin.firestore().collection(COLLECTION.RECEIVABLEUSERS);
 
-  // const randomKey = receivableUsersCollectionRef.doc().id;
-  // log.debug(`generated search key : ${randomKey} `);
+//   // const randomKey = receivableUsersCollectionRef.doc().id;
+//   // log.debug(`generated search key : ${randomKey} `);
 
-  const excludingIds = [...['ccc', 'bbb'], ...['aaa']];
+//   const excludingIds = [...['ccc', 'bbb'], ...['aaa']];
 
-  const gteQuerySnapshot = await receivableUsersCollectionRef
-    .where(admin.firestore.FieldPath.documentId(), 'not-in', excludingIds)
-    // .where(FIELD.SEARCHFLAG, '==', searchFlag)
-    // .where(admin.firestore.FieldPath.documentId(), '>=', randomKey)
-    // .limit(1)
-    .get();
+//   const gteQuerySnapshot = await receivableUsersCollectionRef
+//     .where(admin.firestore.FieldPath.documentId(), 'not-in', excludingIds)
+//     // .where(FIELD.SEARCHFLAG, '==', searchFlag)
+//     // .where(admin.firestore.FieldPath.documentId(), '>=', randomKey)
+//     // .limit(1)
+//     .get();
 
-  gteQuerySnapshot.forEach((doc) => {
-    log.debug(`[${doc.id}]`);
-  });
+//   gteQuerySnapshot.forEach((doc) => {
+//     log.debug(`[${doc.id}]`);
+//   });
 
-  response.send(`search result size : ${gteQuerySnapshot.size}`);
-});
+//   response.send(`search result size : ${gteQuerySnapshot.size}`);
+// });

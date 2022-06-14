@@ -14,4 +14,5 @@ export const FIELD = {
   TOTAlRECEIVABLE: 'totalReceivable',
   RECEIVABLECOUNT: 'receivableCount',
   ISACTIVATED: 'isActivated',
+  ISACCEPTED: 'isAccepted',
 };

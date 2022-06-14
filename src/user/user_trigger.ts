@@ -11,20 +11,22 @@ const log = functions.logger;
 export const onCreateUserTrigger = functions
   .runWith({})
   .firestore.document(`${COLLECTION.USERS}/{userDocId}`)
-  .onCreate((snapshot, context) => {
+  .onCreate(async (snapshot, context) => {
     const userDocId = context.params.userDocId;
 
     const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
 
     const receivableUserRef = firestore.collection(COLLECTION.RECEIVABLEUSERS).doc(userDocId);
 
-    firestore.runTransaction(async (transaction) => {
-      const sendPostDocument = await transaction.get(sendPostRef);
+    await firestore.runTransaction(async (transaction) => {
+      let sendPostDocument = await transaction.get(sendPostRef);
 
       // initial send post
-      if (!sendPostDocument.exists) {
-        await initializeSendpostGlobalVariables(sendPostRef);
-      }
+      // if (!sendPostDocument.exists) {
+      //   await initializeSendpostGlobalVariables(sendPostRef);
+      // }
+
+      sendPostDocument = await transaction.get(sendPostRef);
 
       const totalReceivable = sendPostDocument.get(FIELD.TOTAlRECEIVABLE);
       const searchFlag = sendPostDocument.get(FIELD.SEARCHFLAG);
@@ -51,16 +53,16 @@ export const onUpdateUserTrigger = functions
     }
   });
 
-async function initializeSendpostGlobalVariables(
-  sendPostRef: admin.firestore.DocumentReference<admin.firestore.DocumentData>,
-) {
-  await sendPostRef.set({
-    [FIELD.SEARCHFLAG]: false,
-    [FIELD.ISUSINGEXTRA]: false,
-    [FIELD.TOTAlRECEIVABLE]: 0,
-    [FIELD.RECEIVABLECOUNT]: 0,
-  });
-}
+// async function initializeSendpostGlobalVariables(
+//   sendPostRef: admin.firestore.DocumentReference<admin.firestore.DocumentData>,
+// ) {
+//   await sendPostRef.set({
+//     [FIELD.SEARCHFLAG]: false,
+//     [FIELD.ISUSINGEXTRA]: false,
+//     [FIELD.TOTAlRECEIVABLE]: 0,
+//     [FIELD.RECEIVABLECOUNT]: 0,
+//   });
+// }
 
 async function onUpdateDeletedDate(userDocId: string) {
   const newPostsSnapshot = await firestore

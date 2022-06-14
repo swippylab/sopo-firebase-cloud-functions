@@ -124,10 +124,13 @@ async function setDataForSendingPostToUser(
   // pending new posts
   const pendingNewPostRef = firestore.collection(COLLECTION.PEDINGNEWPOSTS).doc(postDocId);
 
-  const setData = { [FIELD.DATE]: new Date(), [FIELD.USERDOCID]: selectedUserId };
+  const receivedDate =  new Date();
 
-  const newPostPromise = newPostRef.set(setData);
-  const pendingNewPostsPromise = pendingNewPostRef.set(setData);
+  const newPostData = {[FIELD.DATE] : receivedDate, [FIELD.ISACCEPTED] : null};
+  const pendNewPostData = { [FIELD.DATE]: receivedDate, [FIELD.USERDOCID]: selectedUserId };
+
+  const newPostPromise = newPostRef.set(newPostData);
+  const pendingNewPostsPromise = pendingNewPostRef.set(pendNewPostData);
   // return newPostRef.set({ [FIELD.DATE]: new Date() });
   return Promise.all([newPostPromise, pendingNewPostsPromise]);
 }
