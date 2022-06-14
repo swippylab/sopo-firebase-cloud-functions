@@ -1,5 +1,5 @@
-import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
 
@@ -31,7 +31,7 @@ export const onCreateReplyTirgger = functions
       const replyCount = previewPostDocumnet.get(FIELD.REPLYCOUNT);
       const updateReplyCount = replyCount + 1;
 
-      log.debug(`${replyCount} / ${updateReplyCount}`);
+      log.debug(`reply count : ${replyCount} / ${updateReplyCount}`);
 
       const updateData = {
         [FIELD.REPLYCOUNT]: updateReplyCount,
