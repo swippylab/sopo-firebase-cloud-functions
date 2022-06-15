@@ -88,11 +88,12 @@ sendPostToUserArgsType) {
 
     pendPostsSnapshot.forEach(async (doc) => {
       const p_postDocId = doc.id;
+
       const p_result = await sendPostByQuery(p_postDocId, temp_isUsingExtra, searchFlag);
 
       if (p_result) {
         log.debug(`pending posts[${p_postDocId}] delete`);
-        await doc.ref.delete();
+        /* await */ doc.ref.delete();
         temp_isUsingExtra = !temp_isUsingExtra;
       }
     });
@@ -270,14 +271,14 @@ async function getSelectedIdByQueryToReceivableUsers({
 
     const receivableUserRef = firestore.collection(COLLECTION.RECEIVABLEUSERS).doc(selectedUserId);
 
-    firestore.runTransaction(async (transaction) => {
+    await firestore.runTransaction(async (transaction) => {
       const sendPostDocument = await transaction.get(sendPostRef);
 
       const receivableCount = sendPostDocument.get(FIELD.RECEIVABLECOUNT);
       const updateCount = receivableCount + 1;
       transaction.update(sendPostRef, { [FIELD.RECEIVABLECOUNT]: updateCount });
 
-      log.debug(`update receivable count in globalVariable : ${updateCount}`);
+      log.debug(`<${selectedUserId}> update receivable count in globalVariable : ${updateCount}`);
 
       // update isReceived flag
       transaction.update(receivableUserRef, { [FIELD.SEARCHFLAG]: !searchFlag });
