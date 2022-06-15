@@ -50,7 +50,7 @@ export const onUpdateUserTrigger = functions
 
     const previousValue = change.before.data();
 
-    if (previousValue.deleteDate !== newValue.deleteDate) {
+    if (previousValue[FIELD.DELETEDDATE] !== newValue[FIELD.DELETEDDATE]) {
       log.debug(`<${userDocId}> deleteDate update`);
       onUpdateDeletedDate(userDocId);
     }
