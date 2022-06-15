@@ -57,7 +57,7 @@ sendPostToUserArgsType) {
     const receivableCount = sendPostData[FIELD.RECEIVABLECOUNT];
 
     log.debug(
-      `[${postDocId}] get global variables / send post, searchFlag : ${searchFlag}, isUsingExtra : ${isUsingExtra}, receivableCount: ${receivableCount}, totalReceivableCount: ${totalReceivableCount}`,
+      `[${postDocId}] get send post, searchFlag : ${searchFlag}, isUsingExtra : ${isUsingExtra}, receivableCount: ${receivableCount}, totalReceivableCount: ${totalReceivableCount}`,
     );
     if (totalReceivableCount <= receivableCount) {
       // reset count, reverse flag
@@ -84,21 +84,45 @@ sendPostToUserArgsType) {
 
     const pendPostsSnapshot = await pendingPostsRef.orderBy(FIELD.CREATEDDATE).get();
 
-    let temp_isUsingExtra = isUsingExtra;
 
     pendPostsSnapshot.forEach(async (doc) => {
       const p_postDocId = doc.id;
 
-      log.debug(`[${p_postDocId}] pend post sending start`);
-      const p_result = await sendPostByQuery(p_postDocId, temp_isUsingExtra, searchFlag);
+      const p_result = await sendPostByQuery(p_postDocId, isUsingExtra, searchFlag);
 
       if (p_result) {
-        log.debug(`[${p_postDocId}] pending posts delete`);
-        await doc.ref.delete();
-        temp_isUsingExtra = !temp_isUsingExtra;
+        log.debug(`pending posts[${p_postDocId}] delete`);
+        /* await */ doc.ref.delete();
+        isUsingExtra = !isUsingExtra;
       }
     });
     log.debug(`end pend posts process`);
+
+    await firestore.runTransaction(async (transaction) => {
+      const sendPostDocument = await transaction.get(sendPostRef);
+  
+      const sendPostData = sendPostDocument.data()!;
+  
+      searchFlag = sendPostData[FIELD.SEARCHFLAG];
+  
+      const totalReceivableCount = sendPostData[FIELD.TOTAlRECEIVABLE];
+      const receivableCount = sendPostData[FIELD.RECEIVABLECOUNT];
+  
+      log.debug(
+        `[${postDocId}] after precessing pending post / get send post, searchFlag : ${searchFlag}, receivableCount: ${receivableCount}, totalReceivableCount: ${totalReceivableCount}`,
+      );
+      if (totalReceivableCount <= receivableCount) {
+        // reset count, reverse flag
+        searchFlag = !searchFlag;
+  
+        log.debug(`[${postDocId}] after precessing pending post / reverse searchFlag : ${searchFlag} / reset receivableCount`);
+  
+        transaction.update(sendPostRef, {
+          [FIELD.SEARCHFLAG]: searchFlag,
+          [FIELD.RECEIVABLECOUNT]: 0,
+        });
+      } 
+    });
   }
 
   // 4. send post to selected user by query
@@ -152,7 +176,6 @@ async function sendPostByQuery(
       searchFlag,
       rejectionIds,
       linkedIds,
-      postDocId,
     });
 
     if (selectedUserId == null) {
@@ -175,7 +198,6 @@ async function sendPostByQuery(
         searchFlag,
         rejectionIds,
         linkedIds,
-        postDocId,
       });
     }
   }
@@ -229,7 +251,6 @@ interface selectedIdQueryArguments {
   searchFlag?: boolean;
   rejectionIds: string[];
   linkedIds: string[];
-  postDocId?: string; // log로 인한 temp
 }
 
 async function getSelectedIdByQueryToExtraReceivableUsers({
@@ -257,7 +278,6 @@ async function getSelectedIdByQueryToReceivableUsers({
   searchFlag,
   rejectionIds,
   linkedIds,
-  postDocId,
 }: selectedIdQueryArguments) {
   // query
   let selectedDoc = await queryToReceivableUsers({
@@ -283,22 +303,20 @@ async function getSelectedIdByQueryToReceivableUsers({
       const updateCount = receivableCount + 1;
       transaction.update(sendPostRef, { [FIELD.RECEIVABLECOUNT]: updateCount });
 
-      log.debug(
-        `[${postDocId}] <${selectedUserId}> update receivable count in globalVariable : ${updateCount} / searchFlag : ${searchFlag}`,
-      );
+      log.debug(`<${selectedUserId}> update receivable count in globalVariable : ${updateCount}`);
 
       // update isReceived flag
       transaction.update(receivableUserRef, { [FIELD.SEARCHFLAG]: !searchFlag });
-      log.debug(`[${postDocId}] <${selectedUserId}> set searchFlag : ${!searchFlag}`);
+      log.debug(`<${selectedUserId}> set searchFlag : ${!searchFlag}`);
     });
 
-    log.debug(`[${postDocId}] <${selectedUserId}> selected User in Receivable users`);
+    log.debug(`<${selectedUserId}> selected User in Receivable users`);
   }
 
   return selectedUserId;
 }
 
-export async function queryToReceivableUsers({
+async function queryToReceivableUsers({
   searchFlag,
   rejectionIds,
   linkedIds,
@@ -307,11 +325,9 @@ export async function queryToReceivableUsers({
   const receivableUsersCollectionRef = firestore.collection(COLLECTION.RECEIVABLEUSERS);
 
   const randomKey = receivableUsersCollectionRef.doc().id;
-  const excludingIds = [...rejectionIds, ...linkedIds];
+  log.debug(`generated search key : ${randomKey} / searchFlag : ${searchFlag}`);
 
-  log.debug(
-    `generated search key : ${randomKey} / searchFlag : ${searchFlag} / excluding count : ${excludingIds.length}`,
-  );
+  const excludingIds = [...rejectionIds, ...linkedIds];
 
   const gteQuerySnapshot = await receivableUsersCollectionRef
     .where(admin.firestore.FieldPath.documentId(), 'not-in', excludingIds)
