@@ -271,14 +271,14 @@ async function getSelectedIdByQueryToReceivableUsers({
 
     const receivableUserRef = firestore.collection(COLLECTION.RECEIVABLEUSERS).doc(selectedUserId);
 
-    firestore.runTransaction(async (transaction) => {
+    await firestore.runTransaction(async (transaction) => {
       const sendPostDocument = await transaction.get(sendPostRef);
 
       const receivableCount = sendPostDocument.get(FIELD.RECEIVABLECOUNT);
       const updateCount = receivableCount + 1;
       transaction.update(sendPostRef, { [FIELD.RECEIVABLECOUNT]: updateCount });
 
-      log.debug(`update receivable count in globalVariable : ${updateCount}`);
+      log.debug(`<${selectedUserId}> update receivable count in globalVariable : ${updateCount}`);
 
       // update isReceived flag
       transaction.update(receivableUserRef, { [FIELD.SEARCHFLAG]: !searchFlag });
