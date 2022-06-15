@@ -88,11 +88,12 @@ sendPostToUserArgsType) {
 
     pendPostsSnapshot.forEach(async (doc) => {
       const p_postDocId = doc.id;
+
       const p_result = await sendPostByQuery(p_postDocId, temp_isUsingExtra, searchFlag);
 
       if (p_result) {
         log.debug(`pending posts[${p_postDocId}] delete`);
-        await doc.ref.delete();
+        /* await */ doc.ref.delete();
         temp_isUsingExtra = !temp_isUsingExtra;
       }
     });
