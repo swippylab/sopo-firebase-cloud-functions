@@ -9,14 +9,14 @@ const executionDelayHour = 2;
 
 const log = functions.logger;
 
-export const onShceduledHandlePendingPosts = functions.pubsub
+export const onShceduledHandlePendingNewPosts = functions.pubsub
   .schedule(`0 */${executionDelayHour} * * *`)
   // .schedule(`* * * * *`)
   .onRun(async (/* context */) => {
-    await handlePendingPosts();
+    await handlePendingNewPosts();
   });
 
-export async function handlePendingPosts() {
+export async function handlePendingNewPosts() {
   log.debug('start schedule function');
 
   const firestore = admin.firestore();

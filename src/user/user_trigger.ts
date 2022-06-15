@@ -3,8 +3,7 @@ import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { DOCUMENT } from '../constant/document';
 import { FIELD } from '../constant/field';
-import { handlePendingPosts } from '../post/pending_new_posts';
-import sendPostToUser from '../post/send_post';
+import sendPostToUser, { setDataForSendingPostToUser } from '../post/send_post';
 
 const firestore = admin.firestore();
 const log = functions.logger;
@@ -35,9 +34,25 @@ export const onCreateUserTrigger = functions
       transaction.set(receivableUserRef, { [FIELD.SEARCHFLAG]: searchFlag });
 
       transaction.update(sendPostRef, { [FIELD.TOTAlRECEIVABLE]: totalReceivable + 1 });
+
+      log.debug(`user creation trigger transaction end`);
     });
 
-    handlePendingPosts();
+    // pending post 하나 보내기
+    const pendingPostsRef = firestore.collection(COLLECTION.PENDINGPOSTS);
+
+    const pendPostsSnapshot = await pendingPostsRef.orderBy(FIELD.CREATEDDATE).limit(1).get();
+
+    pendPostsSnapshot.forEach(async (doc) => {
+      const p_postDocId = doc.id;
+      const p_result = await setDataForSendingPostToUser(userDocId, p_postDocId);
+
+      log.debug(`[${p_postDocId}] pending post select 1 / send to new user <${userDocId}>`);
+      if (p_result) {
+        log.debug(`[${p_postDocId}] pending posts delete`);
+        doc.ref.delete();
+      }
+    });
   });
 
 export const onUpdateUserTrigger = functions

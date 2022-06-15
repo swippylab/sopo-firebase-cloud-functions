@@ -1,11 +1,11 @@
 import * as functions from 'firebase-functions';
-import { handlePendingPosts } from '../post/pending_new_posts';
+import { handlePendingNewPosts } from '../post/pending_new_posts';
 
 // const log = functions.logger;
 
 export const callHandlePendingNewPosts = functions.https.onRequest(async (request, response) => {
   // eslint-disable-next-line no-unused-vars
-  await handlePendingPosts().catch((err) => response.send('fail handle new posts start'));
+  await handlePendingNewPosts().catch((err) => response.send('fail handle new posts start'));
   response.send('start handle new posts');
 });
 
