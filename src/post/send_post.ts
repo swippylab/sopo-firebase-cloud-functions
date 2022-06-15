@@ -297,7 +297,7 @@ async function getSelectedIdByQueryToReceivableUsers({
   return selectedUserId;
 }
 
-async function queryToReceivableUsers({
+export async function queryToReceivableUsers({
   searchFlag,
   rejectionIds,
   linkedIds,
