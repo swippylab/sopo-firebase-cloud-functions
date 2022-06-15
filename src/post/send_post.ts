@@ -85,7 +85,7 @@ sendPostToUserArgsType) {
     const pendPostsSnapshot = await pendingPostsRef.orderBy(FIELD.CREATEDDATE).get();
 
 
-    pendPostsSnapshot.forEach(async (doc) => {
+    for (const doc of pendPostsSnapshot.docs) {
       const p_postDocId = doc.id;
 
       const p_result = await sendPostByQuery(p_postDocId, isUsingExtra, searchFlag);
@@ -95,7 +95,8 @@ sendPostToUserArgsType) {
         /* await */ doc.ref.delete();
         isUsingExtra = !isUsingExtra;
       }
-    });
+    }
+
     log.debug(`end pend posts process`);
 
     await firestore.runTransaction(async (transaction) => {
