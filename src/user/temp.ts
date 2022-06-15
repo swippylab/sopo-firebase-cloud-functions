@@ -1,6 +1,5 @@
 import * as functions from 'firebase-functions';
 import { handlePendingNewPosts } from '../post/pending_new_posts';
-import { queryToReceivableUsers } from '../post/send_post';
 
 // const log = functions.logger;
 
@@ -10,15 +9,15 @@ export const callHandlePendingNewPosts = functions.https.onRequest(async (reques
   response.send('start handle new posts');
 });
 
-export const queryTest = functions.https.onRequest(async (request, response) => {
-  const selectedId = await queryToReceivableUsers({
-    searchFlag: false,
-    rejectionIds: [],
-    linkedIds: [],
-  });
+// export const queryTest = functions.https.onRequest(async (request, response) => {
+//   const selectedId = await queryToReceivableUsers({
+//     searchFlag: false,
+//     rejectionIds: [],
+//     linkedIds: [],
+//   });
 
-  response.send(`query result : ${selectedId}`);
-});
+//   response.send(`query result : ${selectedId}`);
+// });
 
 // export const helloFireStore = functions.https.onRequest(async (request, response) => {
 //   admin
