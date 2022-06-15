@@ -97,7 +97,7 @@ async function onUpdateDeletedDate(userDocId: string) {
   const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
   const receivableUserRef = firestore.collection(COLLECTION.RECEIVABLEUSERS).doc(userDocId);
 
-  firestore.runTransaction(async (transaction) => {
+  await firestore.runTransaction(async (transaction) => {
     const sendPostDocument = await transaction.get(sendPostRef);
 
     const totalReceivable = sendPostDocument.get(FIELD.TOTAlRECEIVABLE);

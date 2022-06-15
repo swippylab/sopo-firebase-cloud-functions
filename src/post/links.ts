@@ -24,7 +24,7 @@ export default async function updateLinkCountAndPreviewLinkedId({
   // get preview post document with post id
   const previewPostDocRef = firestore.collection(COLLECTION.POSTPREVIEWS).doc(postDocId);
 
-  firestore.runTransaction(async (transaction) => {
+  await firestore.runTransaction(async (transaction) => {
     const previewPostDoc = await transaction.get(previewPostDocRef);
     if (!previewPostDoc.exists) {
       throw `${COLLECTION.POSTPREVIEWS}/${postDocId}} does not exist`;
