@@ -89,8 +89,8 @@ async function onUpdateDeletedDate(userDocId: string) {
     .collection(COLLECTION.NEWPOSTS)
     .get();
 
-  newPostsSnapshot.forEach((doc) => {
-    sendPostToUser({ postDocId: doc.id, userDocId });
+  newPostsSnapshot.forEach(async (doc) => {
+    await sendPostToUser({ postDocId: doc.id, userDocId });
   });
 
   // totalReceivable count update and remove receivable users
