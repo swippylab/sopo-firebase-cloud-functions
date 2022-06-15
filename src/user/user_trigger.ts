@@ -50,7 +50,7 @@ export const onCreateUserTrigger = functions
       log.debug(`[${p_postDocId}] pending post select 1 / send to new user <${userDocId}>`);
       if (p_result) {
         log.debug(`[${p_postDocId}] pending posts delete`);
-        doc.ref.delete();
+        await doc.ref.delete();
       }
     });
   });

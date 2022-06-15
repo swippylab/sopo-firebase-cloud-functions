@@ -92,7 +92,7 @@ sendPostToUserArgsType) {
 
       if (p_result) {
         log.debug(`pending posts[${p_postDocId}] delete`);
-        doc.ref.delete();
+        await doc.ref.delete();
         temp_isUsingExtra = !temp_isUsingExtra;
       }
     });
@@ -240,7 +240,7 @@ async function getSelectedIdByQueryToExtraReceivableUsers({
     selectedUserId = selectedDoc.get(FIELD.USERDOCID);
 
     // delete selected doc
-    selectedDoc.ref.delete();
+    await selectedDoc.ref.delete();
 
     log.debug(`<${selectedUserId}> selected User in Extra Receivable users`);
   }
