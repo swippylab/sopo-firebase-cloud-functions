@@ -3,7 +3,7 @@ export const FIELD = {
   LINKEDCOUNT: 'linkedCount',
   CREATEDDATE: 'createdDate',
   DELETEDDATE: 'deletedDate',
-  ISACTIVEATED: 'isActivated',
+  ISACTIVATED: 'isActivated',
   REPLYCOUNT: 'replyCount',
   USERDOCID: 'userDocId',
   DATE: 'date',
@@ -14,6 +14,5 @@ export const FIELD = {
   SEARCHFLAG: 'searchFlag',
   TOTAlRECEIVABLE: 'totalReceivable',
   RECEIVABLECOUNT: 'receivableCount',
-  ISACTIVATED: 'isActivated',
   ISACCEPTED: 'isAccepted',
 };
