@@ -57,13 +57,13 @@ sendPostToUserArgsType) {
     const receivableCount = sendPostData[FIELD.RECEIVABLECOUNT];
 
     log.debug(
-      `get global variables / send post, searchFlag : ${searchFlag}, isUsingExtra : ${isUsingExtra}, receivableCount: ${receivableCount}, totalReceivableCount: ${totalReceivableCount}`,
+      `[${postDocId}] get global variables / send post, searchFlag : ${searchFlag}, isUsingExtra : ${isUsingExtra}, receivableCount: ${receivableCount}, totalReceivableCount: ${totalReceivableCount}`,
     );
     if (totalReceivableCount <= receivableCount) {
       // reset count, reverse flag
       searchFlag = !searchFlag;
 
-      log.debug(`reverse searchFlag : ${searchFlag} / reset receivableCount`);
+      log.debug(`[${postDocId}] reverse searchFlag : ${searchFlag} / reset receivableCount`);
 
       transaction.update(sendPostRef, {
         [FIELD.ISUSINGEXTRA]: !isUsingExtra,

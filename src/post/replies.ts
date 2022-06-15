@@ -21,7 +21,7 @@ export const onCreateReplyTirgger = functions
     // get preview post document with post id
     const previewPostDocRef = firestore.collection(COLLECTION.POSTPREVIEWS).doc(postDocumentId);
 
-    firestore.runTransaction(async (transaction) => {
+    await firestore.runTransaction(async (transaction) => {
       const previewPostDocumnet = await transaction.get(previewPostDocRef);
       if (!previewPostDocumnet.exists) {
         throw `${COLLECTION.POSTPREVIEWS}/${postDocumentId}} does not exist`;
