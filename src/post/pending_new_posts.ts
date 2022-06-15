@@ -17,7 +17,7 @@ export const onShceduledHandlePendingNewPosts = functions.pubsub
   });
 
 export async function handlePendingNewPosts() {
-  log.debug('start schedule function');
+  log.debug('start handle pending new posts function');
 
   const firestore = admin.firestore();
 
@@ -40,4 +40,6 @@ export async function handlePendingNewPosts() {
     sendPostToUser({ postDocId, userDocId });
     doc.ref.delete();
   });
+
+  log.debug('end of handle pending new posts function');
 }
