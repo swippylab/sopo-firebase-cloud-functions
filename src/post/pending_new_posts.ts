@@ -37,7 +37,7 @@ export async function handlePendingNewPosts() {
       `[${doc.id}] post received date : ${doc.get(FIELD.DATE)} / user with doc : <${userDocId}> `,
     );
 
-    sendPostToUser({ postDocId, userDocId });
+    await sendPostToUser({ postDocId, userDocId });
     doc.ref.delete();
   });
 

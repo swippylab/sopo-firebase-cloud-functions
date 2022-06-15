@@ -306,9 +306,11 @@ async function queryToReceivableUsers({
   const receivableUsersCollectionRef = firestore.collection(COLLECTION.RECEIVABLEUSERS);
 
   const randomKey = receivableUsersCollectionRef.doc().id;
-  log.debug(`generated search key : ${randomKey} / searchFlag : ${searchFlag}`);
-
   const excludingIds = [...rejectionIds, ...linkedIds];
+
+  log.debug(
+    `generated search key : ${randomKey} / searchFlag : ${searchFlag} / excluding count : ${excludingIds.length}`,
+  );
 
   const gteQuerySnapshot = await receivableUsersCollectionRef
     .where(admin.firestore.FieldPath.documentId(), 'not-in', excludingIds)
