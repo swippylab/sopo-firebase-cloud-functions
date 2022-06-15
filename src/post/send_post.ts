@@ -93,7 +93,7 @@ sendPostToUserArgsType) {
 
       if (p_result) {
         log.debug(`pending posts[${p_postDocId}] delete`);
-        /* await */ doc.ref.delete();
+        await doc.ref.delete();
         temp_isUsingExtra = !temp_isUsingExtra;
       }
     });
@@ -283,7 +283,7 @@ async function getSelectedIdByQueryToReceivableUsers({
       transaction.update(sendPostRef, { [FIELD.RECEIVABLECOUNT]: updateCount });
 
       log.debug(
-        `[${postDocId}] <${selectedUserId}> update receivable count in globalVariable : ${updateCount}`,
+        `[${postDocId}] <${selectedUserId}> update receivable count in globalVariable : ${updateCount} / searchFlag : ${searchFlag}`,
       );
 
       // update isReceived flag

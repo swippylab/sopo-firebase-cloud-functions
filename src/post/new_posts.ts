@@ -83,7 +83,7 @@ export const newPostHandleUpdateTrigger = functions
       //get lastConsecutiveRejectedTimes
       const postDocRef = await firestore.collection(COLLECTION.POSTS).doc(postDocId);
 
-      firestore.runTransaction(async (transaction) => {
+      await firestore.runTransaction(async (transaction) => {
         const postDoc = await transaction.get(postDocRef);
 
         let lastConsecutiveRejectedTimes = postDoc.get(FIELD.LASTCONSECUTIVEREJECTEDTIMES);
