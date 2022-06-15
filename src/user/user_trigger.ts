@@ -3,6 +3,7 @@ import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { DOCUMENT } from '../constant/document';
 import { FIELD } from '../constant/field';
+import { handlePendingPosts } from '../post/pending_new_posts';
 import sendPostToUser from '../post/send_post';
 
 const firestore = admin.firestore();
@@ -35,6 +36,8 @@ export const onCreateUserTrigger = functions
 
       transaction.update(sendPostRef, { [FIELD.TOTAlRECEIVABLE]: totalReceivable + 1 });
     });
+
+    handlePendingPosts();
   });
 
 export const onUpdateUserTrigger = functions
