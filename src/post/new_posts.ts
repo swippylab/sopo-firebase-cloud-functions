@@ -3,7 +3,7 @@ import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
 import { CONSECUTIVE_REJECTED_MAX_COUNT } from '../constant/limit';
-import linkCountUpdate from './links';
+import updateLinkCountAndPreviewLinkedId from './links';
 import sendPostToUser from './send_post';
 
 const log = functions.logger;
@@ -78,7 +78,7 @@ export const newPostHandleUpdateTrigger = functions
     let sendFlag = true;
     // post process
     if (isAccepted) {
-      linkCountUpdate({ postDocId, userDocId });
+      updateLinkCountAndPreviewLinkedId({ postDocId, userDocId });
     } else {
       //get lastConsecutiveRejectedTimes
       const postDocRef = await firestore.collection(COLLECTION.POSTS).doc(postDocId);

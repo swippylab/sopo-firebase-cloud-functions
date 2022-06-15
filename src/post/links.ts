@@ -10,7 +10,10 @@ interface linkCountUpdateArgsType {
   userDocId: string;
 }
 
-export default async function linkCountUpdate({ postDocId, userDocId }: linkCountUpdateArgsType) {
+export default async function updateLinkCountAndPreviewLinkedId({
+  postDocId,
+  userDocId,
+}: linkCountUpdateArgsType) {
   log.debug(`[${postDocId}] update linked count`);
 
   // links collection create trigger
@@ -27,17 +30,26 @@ export default async function linkCountUpdate({ postDocId, userDocId }: linkCoun
       throw `${COLLECTION.POSTPREVIEWS}/${postDocId}} does not exist`;
     }
     const linkedUserIds = previewPostDoc.get(FIELD.LINKEDUSERDOCIDS);
+    const linkedCount = previewPostDoc.get(FIELD.LINKEDCOUNT);
+
+    const updateLinkedCount = linkedCount + 1;
 
     // update preview post Document
-    const updateLinkedUserIds = [...linkedUserIds, userDocId];
+    let updateLinkedUserIds;
+    if (linkedUserIds.length >= 4) {
+      linkedUserIds.splice(1, linkedUserIds.length - 3);
+      updateLinkedUserIds = [linkedUserIds, userDocId];
+    } else {
+      updateLinkedUserIds = [...linkedUserIds, userDocId];
+    }
     transaction.update(previewPostDocRef, {
       [FIELD.LINKEDUSERDOCIDS]: updateLinkedUserIds,
-      [FIELD.LINKEDCOUNT]: updateLinkedUserIds.length,
+      [FIELD.LINKEDCOUNT]: updateLinkedCount,
     });
 
     // update post Document / field linkedCount
     transaction.update(postDocRef, {
-      [FIELD.LINKEDCOUNT]: updateLinkedUserIds.length,
+      [FIELD.LINKEDCOUNT]: updateLinkedCount,
     });
 
     log.debug(`[${postDocId}] update previewPost, post transaction end`);
