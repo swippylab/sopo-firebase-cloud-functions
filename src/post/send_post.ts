@@ -241,6 +241,8 @@ async function getSelectedIdByQueryToExtraReceivableUsers({
 
     // delete selected doc
     selectedDoc.ref.delete();
+
+    log.debug(`<${selectedUserId}> selected User in Extra Receivable users`);
   }
 
   return selectedUserId;
@@ -258,13 +260,15 @@ async function getSelectedIdByQueryToReceivableUsers({
     linkedIds,
   });
 
-  let selectedUserId = null;
+  let selectedUserId: string | null = null;
 
   if (selectedDoc != null) {
     selectedUserId = selectedDoc?.id!;
 
     // up receivableCount in globalVariables
     const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
+
+    const receivableUserRef = firestore.collection(COLLECTION.RECEIVABLEUSERS).doc(selectedUserId);
 
     firestore.runTransaction(async (transaction) => {
       const sendPostDocument = await transaction.get(sendPostRef);
@@ -274,13 +278,13 @@ async function getSelectedIdByQueryToReceivableUsers({
       transaction.update(sendPostRef, { [FIELD.RECEIVABLECOUNT]: updateCount });
 
       log.debug(`update receivable count in globalVariable : ${updateCount}`);
+
+      // update isReceived flag
+      transaction.update(receivableUserRef, { [FIELD.SEARCHFLAG]: !searchFlag });
+      log.debug(`<${selectedUserId}> set searchFlag : ${!searchFlag}`);
     });
 
-    // update isReceived flag
-    const receivableUserRef = firestore.collection(COLLECTION.RECEIVABLEUSERS).doc(selectedUserId);
-
-    await receivableUserRef.update({ [FIELD.SEARCHFLAG]: !searchFlag });
-    log.debug(`<${selectedUserId}> set searchFlag : ${!searchFlag}`);
+    log.debug(`<${selectedUserId}> selected User in Receivable users`);
   }
 
   return selectedUserId;
