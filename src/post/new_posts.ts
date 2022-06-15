@@ -118,7 +118,7 @@ export const newPostHandleUpdateTrigger = functions
 
     if (sendFlag) {
       // async로 동작하도록 await 제거
-      log.debug(`${[postDocId]} post to somewhere from [${userDocId}]`);
+      log.debug(`[${[postDocId]}] post to somewhere from <${userDocId}>`);
       sendPostToUser({ postDocId, userDocId });
     }
   });

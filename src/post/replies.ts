@@ -31,7 +31,7 @@ export const onCreateReplyTirgger = functions
       const replyCount = previewPostDocumnet.get(FIELD.REPLYCOUNT);
       const updateReplyCount = replyCount + 1;
 
-      log.debug(`reply count : ${replyCount} / ${updateReplyCount}`);
+      // log.debug(`reply count : ${replyCount} / ${updateReplyCount}`);
 
       const updateData = {
         [FIELD.REPLYCOUNT]: updateReplyCount,

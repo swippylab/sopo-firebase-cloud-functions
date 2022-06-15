@@ -280,6 +280,7 @@ async function getSelectedIdByQueryToReceivableUsers({
     const receivableUserRef = firestore.collection(COLLECTION.RECEIVABLEUSERS).doc(selectedUserId);
 
     await receivableUserRef.update({ [FIELD.SEARCHFLAG]: !searchFlag });
+    log.debug(`<${selectedUserId}> set searchFlag : ${!searchFlag}`);
   }
 
   return selectedUserId;
