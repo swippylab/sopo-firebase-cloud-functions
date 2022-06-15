@@ -43,7 +43,7 @@ export const onCreateUserTrigger = functions
 
     const pendPostsSnapshot = await pendingPostsRef.orderBy(FIELD.CREATEDDATE).limit(1).get();
 
-    pendPostsSnapshot.forEach(async (doc) => {
+    for (const doc of pendPostsSnapshot.docs) {
       const p_postDocId = doc.id;
       const p_result = await setDataForSendingPostToUser(userDocId, p_postDocId);
 
@@ -52,7 +52,7 @@ export const onCreateUserTrigger = functions
         log.debug(`[${p_postDocId}] pending posts delete`);
         await doc.ref.delete();
       }
-    });
+    }
   });
 
 export const onUpdateUserTrigger = functions
@@ -89,9 +89,9 @@ async function onUpdateDeletedDate(userDocId: string) {
     .collection(COLLECTION.NEWPOSTS)
     .get();
 
-  newPostsSnapshot.forEach(async (doc) => {
+  for (const doc of newPostsSnapshot.docs) {
     await sendPostToUser({ postDocId: doc.id, userDocId });
-  });
+  }
 
   // totalReceivable count update and remove receivable users
   const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);

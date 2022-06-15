@@ -30,7 +30,7 @@ export async function handlePendingNewPosts() {
 
   const querySnapshot = await pendNewPostsRef.where(FIELD.DATE, '<=', searchLimitDate).get();
 
-  querySnapshot.forEach(async (doc) => {
+  for (const doc of querySnapshot.docs) {
     const postDocId = doc.id;
     const userDocId = doc.get(FIELD.USERDOCID);
     log.debug(
@@ -39,7 +39,7 @@ export async function handlePendingNewPosts() {
 
     await sendPostToUser({ postDocId, userDocId });
     doc.ref.delete();
-  });
+  }
 
   log.debug('end of handle pending new posts function');
 }

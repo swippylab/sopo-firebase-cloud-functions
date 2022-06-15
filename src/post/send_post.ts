@@ -86,7 +86,7 @@ sendPostToUserArgsType) {
 
     let temp_isUsingExtra = isUsingExtra;
 
-    pendPostsSnapshot.forEach(async (doc) => {
+    for (const doc of pendPostsSnapshot.docs) {
       const p_postDocId = doc.id;
 
       log.debug(`[${p_postDocId}] pend post sending start`);
@@ -94,10 +94,11 @@ sendPostToUserArgsType) {
 
       if (p_result) {
         log.debug(`[${p_postDocId}] pending posts delete`);
-        await doc.ref.delete();
+        /* await */ doc.ref.delete();
         temp_isUsingExtra = !temp_isUsingExtra;
       }
-    });
+    }
+
     log.debug(`end pend posts process`);
   }
 
