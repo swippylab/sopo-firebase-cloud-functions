@@ -151,6 +151,7 @@ async function sendPostByQuery(
       searchFlag,
       rejectionIds,
       linkedIds,
+      postDocId,
     });
 
     if (selectedUserId == null) {
@@ -173,6 +174,7 @@ async function sendPostByQuery(
         searchFlag,
         rejectionIds,
         linkedIds,
+        postDocId,
       });
     }
   }
@@ -226,6 +228,7 @@ interface selectedIdQueryArguments {
   searchFlag?: boolean;
   rejectionIds: string[];
   linkedIds: string[];
+  postDocId?: string; // log로 인한 temp
 }
 
 async function getSelectedIdByQueryToExtraReceivableUsers({
@@ -253,6 +256,7 @@ async function getSelectedIdByQueryToReceivableUsers({
   searchFlag,
   rejectionIds,
   linkedIds,
+  postDocId,
 }: selectedIdQueryArguments) {
   // query
   let selectedDoc = await queryToReceivableUsers({
@@ -278,14 +282,16 @@ async function getSelectedIdByQueryToReceivableUsers({
       const updateCount = receivableCount + 1;
       transaction.update(sendPostRef, { [FIELD.RECEIVABLECOUNT]: updateCount });
 
-      log.debug(`<${selectedUserId}> update receivable count in globalVariable : ${updateCount}`);
+      log.debug(
+        `[${postDocId}] <${selectedUserId}> update receivable count in globalVariable : ${updateCount}`,
+      );
 
       // update isReceived flag
       transaction.update(receivableUserRef, { [FIELD.SEARCHFLAG]: !searchFlag });
-      log.debug(`<${selectedUserId}> set searchFlag : ${!searchFlag}`);
+      log.debug(`[${postDocId}] <${selectedUserId}> set searchFlag : ${!searchFlag}`);
     });
 
-    log.debug(`<${selectedUserId}> selected User in Receivable users`);
+    log.debug(`[${postDocId}] <${selectedUserId}> selected User in Receivable users`);
   }
 
   return selectedUserId;

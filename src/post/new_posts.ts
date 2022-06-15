@@ -117,8 +117,7 @@ export const newPostHandleUpdateTrigger = functions
     await batchPromise;
 
     if (sendFlag) {
-      // async로 동작하도록 await 제거
       log.debug(`[${[postDocId]}] post to somewhere from <${userDocId}>`);
-      sendPostToUser({ postDocId, userDocId });
+      await sendPostToUser({ postDocId, userDocId });
     }
   });
