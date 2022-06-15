@@ -31,14 +31,14 @@ export const onCreatePostTrigger = functions
     // temp
     if (newPostData[FIELD.CREATEDDATE]) createdDate = newPostData[FIELD.CREATEDDATE];
     else createdDate = new Date();
-    if (newPostData[FIELD.ISACTIVEATED]) isActivated = newPostData[FIELD.ISACTIVEATED];
+    if (newPostData[FIELD.ISACTIVATED]) isActivated = newPostData[FIELD.ISACTIVATED];
     if (newPostData[FIELD.REPLYCOUNT]) replyCount = newPostData[FIELD.REPLYCOUNT];
     if (newPostData[FIELD.LINKEDCOUNT]) linkedCount = newPostData[FIELD.LINKEDCOUNT];
     if (newPostData[FIELD.USERDOCID]) userDocId = newPostData[FIELD.USERDOCID];
 
     const postPrewviewData = {
       [FIELD.CREATEDDATE]: createdDate,
-      [FIELD.ISACTIVEATED]: isActivated,
+      [FIELD.ISACTIVATED]: isActivated,
       [FIELD.REPLYCOUNT]: replyCount,
       [FIELD.LINKEDCOUNT]: linkedCount,
       [FIELD.LINKEDUSERDOCIDS]: [userDocId],
