@@ -105,6 +105,9 @@ async function onUpdateDeletedDate(userDocId: string) {
 
     transaction.delete(receivableUserRef);
 
-    transaction.update(sendPostRef, { [FIELD.TOTAlRECEIVABLE]: totalReceivable - 1 });
+    const updateTotalReceivable = totalReceivable - 1;
+    transaction.update(sendPostRef, { [FIELD.TOTAlRECEIVABLE]: updateTotalReceivable });
+
+    log.debug(`<${userDocId}> account delete / totalReceivable : ${updateTotalReceivable}`);
   });
 }
