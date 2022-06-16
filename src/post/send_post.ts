@@ -3,6 +3,7 @@ import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { DOCUMENT } from '../constant/document';
 import { FIELD } from '../constant/field';
+import { sendNewPostArrived } from './message';
 const log = functions.logger;
 const firestore = admin.firestore();
 interface sendPostToUserArgsType {
@@ -141,6 +142,7 @@ sendPostToUserArgsType) {
 export async function setDataForSendingPostToUser(
   selectedUserId: string,
   postDocId: string,
+  receivedDate: Date,
 ): Promise<[admin.firestore.WriteResult, admin.firestore.WriteResult]> {
   // user new posts
   const newPostRef = firestore
@@ -152,8 +154,6 @@ export async function setDataForSendingPostToUser(
   // pending new posts
   const pendingNewPostRef = firestore.collection(COLLECTION.PEDINGNEWPOSTS).doc(postDocId);
 
-  const receivedDate = new Date();
-
   const newPostData = { [FIELD.DATE]: receivedDate, [FIELD.ISACCEPTED]: null };
   const pendNewPostData = { [FIELD.DATE]: receivedDate, [FIELD.USERDOCID]: selectedUserId };
 
@@ -161,13 +161,6 @@ export async function setDataForSendingPostToUser(
   const pendingNewPostsPromise = pendingNewPostRef.set(pendNewPostData);
   // return newPostRef.set({ [FIELD.DATE]: new Date() });
   return Promise.all([newPostPromise, pendingNewPostsPromise]);
-}
-
-async function pushNotificationToUserDevice(selectedUserId: string) {
-  // const userRef = firestore
-  //   .collection(COLLECTION.USERS)
-  //   .doc(selectedUserId);
-  // userRef.
 }
 
 async function sendPostByQuery(
@@ -214,11 +207,13 @@ async function sendPostByQuery(
   if (selectedUserId != null) {
     log.debug(`send post[${postDocId}] to selected user:  ${selectedUserId}`);
 
+    const receivedDate = new Date();
+
     // set data to db for sending post
-    await setDataForSendingPostToUser(selectedUserId, postDocId);
+    await setDataForSendingPostToUser(selectedUserId, postDocId, receivedDate);
 
     // send notification
-    await pushNotificationToUserDevice(selectedUserId);
+    await sendNewPostArrived(selectedUserId, postDocId, receivedDate);
 
     //Todo: send fcm
   }

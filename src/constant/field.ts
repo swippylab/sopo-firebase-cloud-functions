@@ -15,4 +15,5 @@ export const FIELD = {
   TOTAlRECEIVABLE: 'totalReceivable',
   RECEIVABLECOUNT: 'receivableCount',
   ISACCEPTED: 'isAccepted',
+  DEVICETOKENS: 'deviceTokens',
 };

@@ -1,4 +1,10 @@
 import * as admin from 'firebase-admin';
+import * as functions from 'firebase-functions';
+import { COLLECTION } from '../constant/collection';
+import { FIELD } from '../constant/field';
+
+const log = functions.logger;
+const firestore = admin.firestore();
 
 // TODO: choose to put tokens where
 // interface User {
@@ -9,6 +15,11 @@ import * as admin from 'firebase-admin';
 export const sendNewPostArrived = async (userId: string, postId: string, sentDate: Date) => {
   // const userDocument = await admin.firestore().collection('users').doc(userId).get();
   // const user = userDocument.data() as User;
+  const userDocument = await firestore.collection(COLLECTION.USERS).doc(userId).get();
+
+  const deviceTokens: string[] = userDocument.get(FIELD.DEVICETOKENS);
+
+  log.debug(deviceTokens.join(','));
 
   // logger.debug(`sendNewPostArrived: ${user.name}`);
 
