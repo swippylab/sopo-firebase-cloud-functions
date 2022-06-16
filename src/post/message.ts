@@ -10,7 +10,7 @@ export const sendNewPostArrived = async (userId: string, postId: string, sentDat
 
   const deviceTokens: string[] = userDocument.get(FIELD.DEVICETOKENS);
 
-  logger.debug(`sendNewPostArrived: ${deviceTokens.join(',')}`);
+  if (deviceTokens) logger.debug(`sendNewPostArrived: ${deviceTokens.join(',')}`);
 
   await admin.messaging().sendToDevice(
     deviceTokens,
