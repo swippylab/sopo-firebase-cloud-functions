@@ -38,7 +38,7 @@ export default async function updateLinkCountAndPreviewLinkedId({
     let updateLinkedUserIds;
     if (linkedUserIds.length >= 4) {
       linkedUserIds.splice(1, linkedUserIds.length - 3);
-      updateLinkedUserIds = [linkedUserIds, userDocId];
+      updateLinkedUserIds = [...linkedUserIds, userDocId];
     } else {
       updateLinkedUserIds = [...linkedUserIds, userDocId];
     }
