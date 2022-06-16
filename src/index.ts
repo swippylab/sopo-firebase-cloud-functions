@@ -1,6 +1,15 @@
 import 'dotenv/config';
 import * as admin from 'firebase-admin';
-admin.initializeApp();
+import { credential } from 'firebase-admin';
+import serviceAccount from './credential/swippylab-sopo-cf21103f16ae.json';
+
+admin.initializeApp({
+  credential: credential.cert({
+    projectId: serviceAccount.project_id,
+    privateKey: serviceAccount.private_key,
+    clientEmail: serviceAccount.client_email,
+  }),
+});
 
 // export * from './post/links';
 export * from './post/new_posts';
