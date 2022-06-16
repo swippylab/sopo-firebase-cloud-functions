@@ -213,8 +213,7 @@ async function sendPostByQuery(
     await setDataForSendingPostToUser(selectedUserId, postDocId, receivedDate);
 
     // send notification
-    await sendNewPostArrived(selectedUserId, postDocId, receivedDate);
-
+    sendNewPostArrived(selectedUserId, postDocId, receivedDate);
     //Todo: send fcm
   }
 
