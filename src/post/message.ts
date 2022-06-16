@@ -16,7 +16,7 @@ export const sendNewPostArrived = async (userId: string, postId: string, sentDat
     deviceTokens,
     // TODO: how to localize message?
     {
-      data: { type: 'newPost', postId: postId, receivedDate: sentDate.toUTCString() },
+      data: { type: 'newPost', postId: postId, receivedDate: sentDate.toISOString() },
       notification: {
         title: 'New post from someone!',
         body: `${sentDate.toISOString()}`,
