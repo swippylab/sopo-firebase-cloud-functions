@@ -19,7 +19,7 @@ export const sendNewPostArrived = async (userId: string, postId: string, sentDat
       data: { type: 'newPost', postId: postId, receivedDate: sentDate.toUTCString() },
       notification: {
         title: 'New post from someone!',
-        body: `${sentDate}`,
+        body: `${sentDate.toISOString()}`,
       },
     },
     {
