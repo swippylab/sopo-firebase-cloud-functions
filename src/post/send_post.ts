@@ -84,7 +84,6 @@ sendPostToUserArgsType) {
 
     const pendPostsSnapshot = await pendingPostsRef.orderBy(FIELD.CREATEDDATE).get();
 
-
     for (const doc of pendPostsSnapshot.docs) {
       const p_postDocId = doc.id;
 
@@ -101,28 +100,30 @@ sendPostToUserArgsType) {
 
     await firestore.runTransaction(async (transaction) => {
       const sendPostDocument = await transaction.get(sendPostRef);
-  
+
       const sendPostData = sendPostDocument.data()!;
-  
+
       searchFlag = sendPostData[FIELD.SEARCHFLAG];
-  
+
       const totalReceivableCount = sendPostData[FIELD.TOTAlRECEIVABLE];
       const receivableCount = sendPostData[FIELD.RECEIVABLECOUNT];
-  
+
       log.debug(
         `[${postDocId}] after precessing pending post / get send post, searchFlag : ${searchFlag}, receivableCount: ${receivableCount}, totalReceivableCount: ${totalReceivableCount}`,
       );
       if (totalReceivableCount <= receivableCount) {
         // reset count, reverse flag
         searchFlag = !searchFlag;
-  
-        log.debug(`[${postDocId}] after precessing pending post / reverse searchFlag : ${searchFlag} / reset receivableCount`);
-  
+
+        log.debug(
+          `[${postDocId}] after precessing pending post / reverse searchFlag : ${searchFlag} / reset receivableCount`,
+        );
+
         transaction.update(sendPostRef, {
           [FIELD.SEARCHFLAG]: searchFlag,
           [FIELD.RECEIVABLECOUNT]: 0,
         });
-      } 
+      }
     });
   }
 
@@ -138,7 +139,7 @@ sendPostToUserArgsType) {
 }
 
 export async function setDataForSendingPostToUser(
-  selectedUserId: any,
+  selectedUserId: string,
   postDocId: string,
 ): Promise<[admin.firestore.WriteResult, admin.firestore.WriteResult]> {
   // user new posts
@@ -160,6 +161,13 @@ export async function setDataForSendingPostToUser(
   const pendingNewPostsPromise = pendingNewPostRef.set(pendNewPostData);
   // return newPostRef.set({ [FIELD.DATE]: new Date() });
   return Promise.all([newPostPromise, pendingNewPostsPromise]);
+}
+
+async function pushNotificationToUserDevice(selectedUserId: string) {
+  // const userRef = firestore
+  //   .collection(COLLECTION.USERS)
+  //   .doc(selectedUserId);
+  // userRef.
 }
 
 async function sendPostByQuery(
@@ -206,7 +214,11 @@ async function sendPostByQuery(
   if (selectedUserId != null) {
     log.debug(`send post[${postDocId}] to selected user:  ${selectedUserId}`);
 
+    // set data to db for sending post
     await setDataForSendingPostToUser(selectedUserId, postDocId);
+
+    // send notification
+    await pushNotificationToUserDevice(selectedUserId);
 
     //Todo: send fcm
   }
