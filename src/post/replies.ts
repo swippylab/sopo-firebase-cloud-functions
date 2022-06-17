@@ -46,6 +46,8 @@ export const onCreateReplyTirgger = functions
       log.debug(`update previewPost, post transaction end`);
     });
 
+    // Todo: interator post/doc/links / send message reply count and reply doc
+
     // // get post document with post id
     // const postDocRef = firestore.collection(COLLECTION.POSTS).doc(postDocumentId);
     // const postDocumnet = await postDocRef.get();

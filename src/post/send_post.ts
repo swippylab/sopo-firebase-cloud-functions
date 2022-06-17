@@ -225,7 +225,6 @@ async function sendPostByQuery(
 
     // send notification
     sendNewPostArrived(selectedUserId, postDocId, receivedDate);
-    //Todo: send fcm
   }
 
   return selectedUserId != null;

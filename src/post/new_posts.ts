@@ -103,6 +103,9 @@ export const newPostHandleUpdateTrigger = functions
 
         log.debug(`[${postDocId}] update previewPost, post transaction end`);
       });
+
+      //Todo: interator post/docId/links / send message
+      // 찾는중 / linked count
     } else {
       //get lastConsecutiveRejectedTimes
       const postDocRef = await firestore.collection(COLLECTION.POSTS).doc(postDocId);
@@ -144,6 +147,9 @@ export const newPostHandleUpdateTrigger = functions
           });
         }
       });
+
+      //Todo: interator post/docId/links / send message
+      // 찾는중 or 멈춤 /
     }
 
     // wait for write
