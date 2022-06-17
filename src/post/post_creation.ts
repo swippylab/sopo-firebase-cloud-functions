@@ -21,31 +21,31 @@ export const onCreatePostTrigger = functions
     // get data from post document
     const newPostData = snap.data();
 
-    // create preview post
+    // // create preview post
     let createdDate: Date | undefined = undefined;
-    let isActivated: boolean = true;
-    let replyCount: number = 0;
-    let linkedCount: number = 1;
+    // let isActivated: boolean = true;
+    // let replyCount: number = 0;
+    // let linkedCount: number = 1;
     let userDocId: string = uuidv4();
 
-    // temp
+    // // temp
     if (newPostData[FIELD.CREATEDDATE]) createdDate = newPostData[FIELD.CREATEDDATE];
     else createdDate = new Date();
-    if (newPostData[FIELD.ISACTIVATED]) isActivated = newPostData[FIELD.ISACTIVATED];
-    if (newPostData[FIELD.REPLYCOUNT]) replyCount = newPostData[FIELD.REPLYCOUNT];
-    if (newPostData[FIELD.LINKEDCOUNT]) linkedCount = newPostData[FIELD.LINKEDCOUNT];
+    // if (newPostData[FIELD.ISACTIVATED]) isActivated = newPostData[FIELD.ISACTIVATED];
+    // if (newPostData[FIELD.REPLYCOUNT]) replyCount = newPostData[FIELD.REPLYCOUNT];
+    // if (newPostData[FIELD.LINKEDCOUNT]) linkedCount = newPostData[FIELD.LINKEDCOUNT];
     if (newPostData[FIELD.USERDOCID]) userDocId = newPostData[FIELD.USERDOCID];
 
-    const postPrewviewData = {
-      [FIELD.CREATEDDATE]: createdDate,
-      [FIELD.ISACTIVATED]: isActivated,
-      [FIELD.REPLYCOUNT]: replyCount,
-      [FIELD.LINKEDCOUNT]: linkedCount,
-      [FIELD.LINKEDUSERDOCIDS]: [userDocId],
-    };
+    // const postPrewviewData = {
+    //   [FIELD.CREATEDDATE]: createdDate,
+    //   [FIELD.ISACTIVATED]: isActivated,
+    //   [FIELD.REPLYCOUNT]: replyCount,
+    //   [FIELD.LINKEDCOUNT]: linkedCount,
+    //   [FIELD.LINKEDUSERDOCIDS]: [userDocId],
+    // };
 
     // preview post collection
-    const postPreviewCreateRef = firestore.collection(COLLECTION.POSTPREVIEWS).doc(postDocId);
+    // const postPreviewCreateRef = firestore.collection(COLLECTION.POSTPREVIEWS).doc(postDocId);
 
     // myPosts sub collection in user doc
     const userMyPostCreateRef = firestore
@@ -82,7 +82,7 @@ export const onCreatePostTrigger = functions
       [FIELD.CREATEDDATE]: linkedDate,
     };
 
-    batch.set(postPreviewCreateRef, postPrewviewData);
+    // batch.set(postPreviewCreateRef, postPrewviewData);
     batch.set(userMyPostCreateRef, userSubCollectionData);
     batch.set(userAllPostCreateRef, userSubCollectionData);
     batch.set(postLinkRef, postLinkData);

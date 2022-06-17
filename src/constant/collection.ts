@@ -7,7 +7,7 @@ export const COLLECTION = {
   RECEIVEDPOSTS: 'receivedPosts',
   POSTS: 'posts',
   REPLIES: 'replies',
-  POSTPREVIEWS: 'postPreviews',
+  // POSTPREVIEWS: 'postPreviews',
   LINKS: 'links',
   REJECTIONS: 'rejections',
   RECEIVABLEUSERS: 'receivableUsers',

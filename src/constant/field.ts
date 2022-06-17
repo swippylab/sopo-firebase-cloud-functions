@@ -1,5 +1,5 @@
 export const FIELD = {
-  LINKEDUSERDOCIDS: 'linkedUserDocIds',
+  // LINKEDUSERDOCIDS: 'linkedUserDocIds',
   LINKEDCOUNT: 'linkedCount',
   CREATEDDATE: 'createdDate',
   DELETEDDATE: 'deletedDate',
@@ -16,4 +16,6 @@ export const FIELD = {
   RECEIVABLECOUNT: 'receivableCount',
   ISACCEPTED: 'isAccepted',
   DEVICETOKENS: 'tokens',
+  CURRENTRECEIVEDUSERDOCID: 'currentReceivedUserDocId',
+  ISREADING: 'isReading',
 };

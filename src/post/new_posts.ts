@@ -3,7 +3,6 @@ import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
 import { CONSECUTIVE_REJECTED_MAX_COUNT } from '../constant/limit';
-import updateLinkCountAndPreviewLinkedId from './links';
 import sendPostToUser from './send_post';
 
 const log = functions.logger;
@@ -78,11 +77,36 @@ export const newPostHandleUpdateTrigger = functions
     let sendFlag = true;
     // post process
     if (isAccepted) {
-      updateLinkCountAndPreviewLinkedId({ postDocId, userDocId });
+      // updateLinkCountAndPreviewLinkedId({ postDocId /* , userDocId */ });
+      log.debug(`[${postDocId}] update linked count`);
+
+      // links collection create trigger
+      // get post document with post id
+      const postDocRef = firestore.collection(COLLECTION.POSTS).doc(postDocId);
+
+      await firestore.runTransaction(async (transaction) => {
+        const postDoc = await transaction.get(postDocRef);
+        if (!postDoc.exists) {
+          throw `${COLLECTION.POSTS}/${postDocId}} does not exist`;
+        }
+        const linkedCount = postDoc.get(FIELD.LINKEDCOUNT);
+
+        const updateLinkedCount = linkedCount + 1;
+
+        // update post Document / field linkedCount
+        transaction.update(postDocRef, {
+          [FIELD.LINKEDCOUNT]: updateLinkedCount,
+          [FIELD.LASTCONSECUTIVEREJECTEDTIMES]: 0,
+          [FIELD.CURRENTRECEIVEDUSERDOCID]: null,
+          [FIELD.ISREADING]: false,
+        });
+
+        log.debug(`[${postDocId}] update previewPost, post transaction end`);
+      });
     } else {
       //get lastConsecutiveRejectedTimes
       const postDocRef = await firestore.collection(COLLECTION.POSTS).doc(postDocId);
-      const postPreviewDocRef = await firestore.collection(COLLECTION.POSTPREVIEWS).doc(postDocId);
+      // const postPreviewDocRef = await firestore.collection(COLLECTION.POSTPREVIEWS).doc(postDocId);
 
       await firestore.runTransaction(async (transaction) => {
         const postDoc = await transaction.get(postDocRef);
@@ -105,14 +129,18 @@ export const newPostHandleUpdateTrigger = functions
           transaction.update(postDocRef, {
             [FIELD.LASTCONSECUTIVEREJECTEDTIMES]: lastConsecutiveRejectedTimes,
             [FIELD.ISACTIVATED]: false,
+            [FIELD.CURRENTRECEIVEDUSERDOCID]: null,
+            [FIELD.ISREADING]: false,
           });
 
-          transaction.update(postPreviewDocRef, {
-            [FIELD.ISACTIVATED]: false,
-          });
+          // transaction.update(postPreviewDocRef, {
+          //   [FIELD.ISACTIVATED]: false,
+          // });
         } else {
           transaction.update(postDocRef, {
             [FIELD.LASTCONSECUTIVEREJECTEDTIMES]: lastConsecutiveRejectedTimes,
+            [FIELD.CURRENTRECEIVEDUSERDOCID]: null,
+            [FIELD.ISREADING]: false,
           });
         }
       });

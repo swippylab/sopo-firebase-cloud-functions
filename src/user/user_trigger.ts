@@ -46,7 +46,11 @@ export const onCreateUserTrigger = functions
     for (const doc of pendPostsSnapshot.docs) {
       const p_postDocId = doc.id;
       const receivedDate = new Date();
-      const p_result = await setDataForSendingPostToUser(userDocId, p_postDocId, receivedDate);
+      const p_result = await setDataForSendingPostToUser({
+        selectedUserId: userDocId,
+        postDocId: p_postDocId,
+        receivedDate,
+      });
 
       log.debug(`[${p_postDocId}] pending post select 1 / send to new user <${userDocId}>`);
       if (p_result) {

@@ -19,16 +19,16 @@ export const onCreateReplyTirgger = functions
     const postDocRef = firestore.collection(COLLECTION.POSTS).doc(postDocumentId);
 
     // get preview post document with post id
-    const previewPostDocRef = firestore.collection(COLLECTION.POSTPREVIEWS).doc(postDocumentId);
+    // const previewPostDocRef = firestore.collection(COLLECTION.POSTPREVIEWS).doc(postDocumentId);
 
     await firestore.runTransaction(async (transaction) => {
-      const previewPostDocumnet = await transaction.get(previewPostDocRef);
-      if (!previewPostDocumnet.exists) {
-        throw `${COLLECTION.POSTPREVIEWS}/${postDocumentId}} does not exist`;
+      const postDocumnet = await transaction.get(postDocRef);
+      if (!postDocumnet.exists) {
+        throw `${COLLECTION.POSTS}/${postDocumentId}} does not exist`;
       }
 
       // get reply count from post document
-      const replyCount = previewPostDocumnet.get(FIELD.REPLYCOUNT);
+      const replyCount = postDocumnet.get(FIELD.REPLYCOUNT);
       const updateReplyCount = replyCount + 1;
 
       // log.debug(`reply count : ${replyCount} / ${updateReplyCount}`);
@@ -41,7 +41,7 @@ export const onCreateReplyTirgger = functions
       transaction.update(postDocRef, updateData);
 
       // update preview post Document / field linkedCount
-      transaction.update(previewPostDocRef, updateData);
+      // transaction.update(previewPostDocRef, updateData);
 
       log.debug(`update previewPost, post transaction end`);
     });

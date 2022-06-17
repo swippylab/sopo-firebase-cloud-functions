@@ -5,10 +5,13 @@ import { FIELD } from '../constant/field';
 
 const firestore = admin.firestore();
 
-export const sendNewPostArrived = async (userId: string, postId: string, sentDate: Date) => {
-  const userDocument = await firestore.collection(COLLECTION.USERS).doc(userId).get();
+export const sendNewPostArrived = async (userDocId: string, postDocId: string, sentDate: Date) => {
+  const userDocument = await firestore.collection(COLLECTION.USERS).doc(userDocId).get();
 
   const deviceTokens: string[] = userDocument.get(FIELD.DEVICETOKENS);
+
+  const postDocument = await firestore.collection(COLLECTION.POSTS).doc(postDocId).get();
+  const postDocData = postDocument.data();
 
   if (deviceTokens) logger.debug(`sendNewPostArrived: ${deviceTokens.join(',')}`);
 
@@ -16,7 +19,12 @@ export const sendNewPostArrived = async (userId: string, postId: string, sentDat
     deviceTokens,
     // TODO: how to localize message?
     {
-      data: { type: 'newPost', postId: postId, receivedDate: sentDate.toISOString() },
+      data: {
+        type: 'newPost',
+        postId: postDocId,
+        receivedDate: sentDate.toISOString(),
+        post: JSON.stringify(postDocData),
+      },
       notification: {
         title: 'New post from someone!',
         body: `${sentDate.toISOString()}`,
