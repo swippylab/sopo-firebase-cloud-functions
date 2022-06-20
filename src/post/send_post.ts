@@ -169,7 +169,7 @@ export async function setDataForSendingPostToUser({
 
   const newPostPromise = newPostRef.set(newPostData);
   const pendingNewPostsPromise = pendingNewPostRef.set(pendNewPostData);
-  const postPromise = postRef.set(postDocData);
+  const postPromise = postRef.update(postDocData);
 
   return Promise.all([newPostPromise, pendingNewPostsPromise, postPromise]);
 }
