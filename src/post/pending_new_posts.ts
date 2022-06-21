@@ -2,6 +2,7 @@ import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
+import { deleteNewPostInUser, handleRejectionPost } from './new_posts';
 import sendPostToUser from './send_post';
 
 const maxWaitHour = 2;
@@ -33,11 +34,31 @@ export async function handlePendingNewPosts() {
   for (const doc of querySnapshot.docs) {
     const postDocId = doc.id;
     const userDocId = doc.get(FIELD.USERDOCID);
+    const isReading = doc.get(FIELD.ISREADING);
     log.debug(
-      `[${doc.id}] post received date : ${doc.get(FIELD.DATE)} / user with doc : <${userDocId}> `,
+      `[${doc.id}] pending new post / received date : ${doc.get(
+        FIELD.DATE,
+      )} / user with doc : <${userDocId}> `,
     );
 
-    await sendPostToUser({ postDocId, userDocId });
+    let sendFlag = true;
+
+    if (!isReading) {
+      const postDocRef = admin.firestore().collection(COLLECTION.POSTS).doc(postDocId);
+
+      await postDocRef.update({
+        [FIELD.CURRENTRECEIVEDUSERDOCID]: null,
+        [FIELD.ISREADING]: false,
+      });
+    } else {
+      sendFlag = await handleRejectionPost(postDocId);
+    }
+
+    if (sendFlag) {
+      await sendPostToUser({ postDocId, userDocId });
+    } else {
+      await deleteNewPostInUser(userDocId, postDocId);
+    }
     doc.ref.delete();
   }
 

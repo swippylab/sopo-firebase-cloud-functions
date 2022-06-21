@@ -4,6 +4,7 @@ import { COLLECTION } from '../constant/collection';
 import { DOCUMENT } from '../constant/document';
 import { FIELD } from '../constant/field';
 import { sendNewPostArrived } from './message';
+import { deleteNewPostInUser } from './new_posts';
 const log = functions.logger;
 const firestore = admin.firestore();
 interface sendPostToUserArgsType {
@@ -20,21 +21,7 @@ sendPostToUserArgsType) {
 
   // 보내기 전에 new Posts doc들을 지운다
   if (sendUserDocId) {
-    const deleteBatch = firestore.batch();
-    // delete userNewPost
-    const newPostRef = firestore
-      .collection(COLLECTION.USERS)
-      .doc(sendUserDocId)
-      .collection(COLLECTION.NEWPOSTS)
-      .doc(postDocId);
-    deleteBatch.delete(newPostRef);
-    // batch.delete(changed.after.ref); // warning으로 상위 코드로 대체하였으나 어느순간부터 warning 안뜸
-
-    // delete pending new post
-    const pendingNewPostRef = firestore.collection(COLLECTION.PEDINGNEWPOSTS).doc(postDocId);
-    deleteBatch.delete(pendingNewPostRef);
-
-    await deleteBatch.commit();
+    await deleteNewPostInUser(sendUserDocId, postDocId);
   }
 
   // 1. get globalVariables/systemPost

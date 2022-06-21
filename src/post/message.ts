@@ -34,6 +34,8 @@ export const sendNewPostArrived = async (userDocId: string, postDocId: string, s
         priority: 'high',
       },
     );
+  } else {
+    logger.debug(`No log in device <${userDocId}> user / not send message`);
   }
 
   logger.debug('sendNewPostArrived');
