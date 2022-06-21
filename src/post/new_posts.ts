@@ -125,7 +125,7 @@ export const newPostHandleUpdateTrigger = functions
         log.debug(`[${postDocId}] consecutive rejected count : ${lastConsecutiveRejectedTimes}`);
 
         // 연속횟수 초과시 다시 보내지 않음
-        if (lastConsecutiveRejectedTimes == CONSECUTIVE_REJECTED_MAX_COUNT) {
+        if (lastConsecutiveRejectedTimes >= CONSECUTIVE_REJECTED_MAX_COUNT) {
           sendFlag = false;
           log.debug(`[${postDocId}] Do not send anywhere`);
 
