@@ -10,9 +10,9 @@ export const sendNewPostArrived = async (userDocId: string, postDocId: string, s
 
   const deviceTokens: string[] = userDocument.get(FIELD.DEVICETOKENS);
 
-  if (deviceTokens) logger.debug(`sendNewPostArrived: ${deviceTokens.join(',')}`);
+  if (deviceTokens?.length > 0) logger.debug(`sendNewPostArrived: ${deviceTokens.join(',')}`);
 
-  if (deviceTokens) {
+  if (deviceTokens.length > 0) {
     await admin.messaging().sendToDevice(
       deviceTokens,
       // TODO: localize message by user local info in Firestore
