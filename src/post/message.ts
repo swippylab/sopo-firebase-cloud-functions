@@ -12,27 +12,29 @@ export const sendNewPostArrived = async (userDocId: string, postDocId: string, s
 
   if (deviceTokens) logger.debug(`sendNewPostArrived: ${deviceTokens.join(',')}`);
 
-  await admin.messaging().sendToDevice(
-    deviceTokens,
-    // TODO: localize message by user local info in Firestore
-    {
-      data: {
-        type: 'newPost',
-        postId: postDocId,
-        receivedDate: sentDate.toISOString(),
+  if (deviceTokens) {
+    await admin.messaging().sendToDevice(
+      deviceTokens,
+      // TODO: localize message by user local info in Firestore
+      {
+        data: {
+          type: 'newPost',
+          postId: postDocId,
+          receivedDate: sentDate.toISOString(),
+        },
+        notification: {
+          title: 'New post from someone!',
+          body: `${sentDate.toISOString()}`,
+        },
       },
-      notification: {
-        title: 'New post from someone!',
-        body: `${sentDate.toISOString()}`,
+      {
+        // Required for background/quit data-only messages on iOS
+        contentAvailable: true,
+        // Required for background/quit data-only messages on Android
+        priority: 'high',
       },
-    },
-    {
-      // Required for background/quit data-only messages on iOS
-      contentAvailable: true,
-      // Required for background/quit data-only messages on Android
-      priority: 'high',
-    },
-  );
+    );
+  }
 
   logger.debug('sendNewPostArrived');
 };
