@@ -12,6 +12,8 @@ export const sendNewPostArrived = async (userDocId: string, postDocId: string, s
 
   if (deviceTokens?.length > 0) logger.debug(`sendNewPostArrived: ${deviceTokens.join(',')}`);
 
+  // await new Promise((resolve) => setTimeout(resolve, 10));
+
   if (deviceTokens.length > 0) {
     await admin.messaging().sendToDevice(
       deviceTokens,
@@ -19,12 +21,10 @@ export const sendNewPostArrived = async (userDocId: string, postDocId: string, s
       {
         data: {
           type: 'newPost',
+          notificationTitle: 'New post from someone!',
+          notificationBody: `${sentDate.toISOString()}`,
           postId: postDocId,
           receivedDate: sentDate.toISOString(),
-        },
-        notification: {
-          title: 'New post from someone!',
-          body: `${sentDate.toISOString()}`,
         },
       },
       {
