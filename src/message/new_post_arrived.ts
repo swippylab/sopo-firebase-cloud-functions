@@ -22,7 +22,6 @@ const sendNewPostArrivedMessage = async (userDocId: string, postDocId: string, s
   if (deviceTokens.length > 0) {
     await admin.messaging().sendToDevice(
       deviceTokens,
-      // TODO: localize message by user local info in Firestore
       {
         data: {
           type: 'newPost',
