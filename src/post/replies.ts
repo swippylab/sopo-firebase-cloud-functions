@@ -28,13 +28,13 @@ export const onCreateReplyTirgger = functions
       }
 
       // get reply count from post document
-      const replyCount = postDocumnet.get(FIELD.REPLYCOUNT);
+      const replyCount = postDocumnet.get(FIELD.REPLY_COUNT);
       const updateReplyCount = replyCount + 1;
 
       // log.debug(`reply count : ${replyCount} / ${updateReplyCount}`);
 
       const updateData = {
-        [FIELD.REPLYCOUNT]: updateReplyCount,
+        [FIELD.REPLY_COUNT]: updateReplyCount,
       };
 
       // update post Document

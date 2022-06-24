@@ -33,8 +33,8 @@ export async function handlePendingNewPosts() {
 
   for (const doc of querySnapshot.docs) {
     const postDocId = doc.id;
-    const userDocId = doc.get(FIELD.USERDOCID);
-    const isReading = doc.get(FIELD.ISREADING);
+    const userDocId = doc.get(FIELD.USER_DOC_ID);
+    const isReading = doc.get(FIELD.IS_READING);
     log.debug(
       `[${doc.id}] pending new post / received date : ${doc.get(
         FIELD.DATE,
@@ -47,8 +47,8 @@ export async function handlePendingNewPosts() {
       const postDocRef = admin.firestore().collection(COLLECTION.POSTS).doc(postDocId);
 
       await postDocRef.update({
-        [FIELD.CURRENTRECEIVEDUSERDOCID]: null,
-        [FIELD.ISREADING]: false,
+        [FIELD.CURRENT_RECEIVED_USER_DOC_ID]: null,
+        [FIELD.IS_READING]: false,
       });
     } else {
       sendFlag = await handleRejectionPost(postDocId);

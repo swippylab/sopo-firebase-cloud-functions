@@ -18,7 +18,7 @@ export const newPostHandleUpdateTrigger = functions
 
     const updateData = changed.after.data();
     const receivedDate: Date = updateData[FIELD.DATE];
-    const isAccepted: boolean = updateData[FIELD.ISACCEPTED];
+    const isAccepted: boolean = updateData[FIELD.IS_ACCEPTED];
 
     const batch = _firestore.batch();
 
@@ -28,7 +28,7 @@ export const newPostHandleUpdateTrigger = functions
       const userSubCollectionData = { [FIELD.DATE]: receivedDate };
 
       const linkedDate = new Date();
-      const postLinkData = { /* [FIELD.USERDOCID]: userDocId, */ [FIELD.LINKEDDATE]: linkedDate };
+      const postLinkData = { /* [FIELD.USERDOCID]: userDocId, */ [FIELD.LINKED_DATE]: linkedDate };
 
       const userReceivePostRef = _firestore
         .collection(COLLECTION.USERS)
@@ -65,7 +65,7 @@ export const newPostHandleUpdateTrigger = functions
 
       batch.set(postRejectionRef, {
         // [FIELD.USERDOCID]: userDocId,
-        [FIELD.REJECTEDDATE]: new Date(),
+        [FIELD.REJECTED_DATE]: new Date(),
       });
     }
 
@@ -90,16 +90,16 @@ export const newPostHandleUpdateTrigger = functions
         if (!postDoc.exists) {
           throw `${COLLECTION.POSTS}/${postDocId}} does not exist`;
         }
-        const linkedCount = postDoc.get(FIELD.LINKEDCOUNT);
+        const linkedCount = postDoc.get(FIELD.LINKED_COUNT);
 
         const updateLinkedCount = linkedCount + 1;
 
         // update post Document / field linkedCount
         transaction.update(postDocRef, {
-          [FIELD.LINKEDCOUNT]: updateLinkedCount,
-          [FIELD.LASTCONSECUTIVEREJECTEDTIMES]: 0,
-          [FIELD.CURRENTRECEIVEDUSERDOCID]: null,
-          [FIELD.ISREADING]: false,
+          [FIELD.LINKED_COUNT]: updateLinkedCount,
+          [FIELD.LAST_CONSECUTIVE_REJECTED_TIMES]: 0,
+          [FIELD.CURRENT_RECEIVED_USER_DOC_ID]: null,
+          [FIELD.IS_READING]: false,
         });
 
         log.debug(`[${postDocId}] update previewPost, post transaction end`);
@@ -128,7 +128,7 @@ export async function handleRejectionPost(postDocId: string) {
   await _firestore.runTransaction(async (transaction) => {
     const postDoc = await transaction.get(postDocRef);
 
-    let lastConsecutiveRejectedTimes = postDoc.get(FIELD.LASTCONSECUTIVEREJECTEDTIMES);
+    let lastConsecutiveRejectedTimes = postDoc.get(FIELD.LAST_CONSECUTIVE_REJECTED_TIMES);
 
     if (!lastConsecutiveRejectedTimes) {
       lastConsecutiveRejectedTimes = 0;
@@ -144,16 +144,16 @@ export async function handleRejectionPost(postDocId: string) {
       log.debug(`[${postDocId}] Do not send anywhere`);
 
       transaction.update(postDocRef, {
-        [FIELD.LASTCONSECUTIVEREJECTEDTIMES]: lastConsecutiveRejectedTimes,
-        [FIELD.ISACTIVATED]: false,
-        [FIELD.CURRENTRECEIVEDUSERDOCID]: null,
-        [FIELD.ISREADING]: false,
+        [FIELD.LAST_CONSECUTIVE_REJECTED_TIMES]: lastConsecutiveRejectedTimes,
+        [FIELD.IS_ACTIVATED]: false,
+        [FIELD.CURRENT_RECEIVED_USER_DOC_ID]: null,
+        [FIELD.IS_READING]: false,
       });
     } else {
       transaction.update(postDocRef, {
-        [FIELD.LASTCONSECUTIVEREJECTEDTIMES]: lastConsecutiveRejectedTimes,
-        [FIELD.CURRENTRECEIVEDUSERDOCID]: null,
-        [FIELD.ISREADING]: false,
+        [FIELD.LAST_CONSECUTIVE_REJECTED_TIMES]: lastConsecutiveRejectedTimes,
+        [FIELD.CURRENT_RECEIVED_USER_DOC_ID]: null,
+        [FIELD.IS_READING]: false,
       });
     }
   });

@@ -24,10 +24,10 @@ export * from './user/user_trigger';
 
 ///initialize global variables document.
 const globalVariablesInitialValue = {
-  [FIELD.SEARCHFLAG]: false,
-  [FIELD.ISUSINGEXTRA]: false,
-  [FIELD.TOTAlRECEIVABLE]: 0,
-  [FIELD.RECEIVABLECOUNT]: 0,
+  [FIELD.SEARCH_FLAG]: false,
+  [FIELD.IS_USING_EXTRA]: false,
+  [FIELD.TOTAL_RECEIVABLE]: 0,
+  [FIELD.RECEIVABLE_COUNT]: 0,
 };
 
 const sendPostref = admin.firestore().collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
