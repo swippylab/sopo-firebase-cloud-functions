@@ -15,7 +15,7 @@ const sendNewPostArrivedMessage = async (userDocId: string, postDocId: string, s
   const userDocument = await _firestore.collection(COLLECTION.USERS).doc(userDocId).get();
 
   const deviceTokens: string[] = userDocument.get(FIELD.TOKENS);
-  const primaryLanguage: string = userDocument.get(FIELD.PRIMARY_LANGUAGE);
+  const systemLanguage: string = userDocument.get(FIELD.SYSTEM_LANGUAGE);
 
   if (deviceTokens?.length > 0) logger.debug(`sendNewPostArrived: ${deviceTokens.join(',')}`);
 
@@ -29,7 +29,7 @@ const sendNewPostArrivedMessage = async (userDocId: string, postDocId: string, s
           receivedDate: sentDate.toISOString(),
         },
         notification: {
-          title: title[primaryLanguage],
+          title: title[systemLanguage],
         },
       },
       {

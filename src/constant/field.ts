@@ -18,5 +18,5 @@ export const FIELD = {
   TOKENS: 'tokens',
   CURRENT_RECEIVED_USER_DOC_ID: 'currentReceivedUserDocId',
   IS_READING: 'isReading',
-  PRIMARY_LANGUAGE: 'primaryLanguage',
+  SYSTEM_LANGUAGE: 'systemLanguage',
 };
