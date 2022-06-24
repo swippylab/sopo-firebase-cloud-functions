@@ -5,13 +5,14 @@ import { FIELD } from '../constant/field';
 import { deleteNewPostInUser, handleRejectionPost } from './new_posts';
 import sendPostToUser from './send_post';
 
-const maxWaitHour = 2;
-const executionDelayHour = 2;
+const maxWaitHour = 4;
+const executionDelayHour = 4;
 
 const log = functions.logger;
 
 export const onShceduledHandlePendingNewPosts = functions.pubsub
-  .schedule(`0 */${executionDelayHour} * * *`)
+  .schedule(`every ${executionDelayHour} hours`)
+  // .schedule(`0 */${executionDelayHour} * * *`)
   // .schedule(`* * * * *`)
   .onRun(async (/* context */) => {
     await handlePendingNewPosts();
