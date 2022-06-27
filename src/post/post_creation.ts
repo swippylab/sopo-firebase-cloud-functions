@@ -3,7 +3,6 @@ import * as functions from 'firebase-functions';
 import { v4 as uuidv4 } from 'uuid';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
-import sendNewPostArrivedMessage from '../message/new_post_arrived';
 
 const log = functions.logger;
 
@@ -95,8 +94,6 @@ export const onCreatePostTrigger = functions
     await new Promise((resolve) => {
       setTimeout(resolve, 1000);
     });
-
-    sendNewPostArrivedMessage(userDocId, postDocId, new Date());
 
     // await sendPostToUser({ postDocId });
 
