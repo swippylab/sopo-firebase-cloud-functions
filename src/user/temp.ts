@@ -4,8 +4,8 @@ import { handlePendingNewPosts } from '../post/pending_new_posts';
 // const log = functions.logger;
 
 export const callHandlePendingNewPosts = functions.https.onRequest(async (request, response) => {
-  // eslint-disable-next-line no-unused-vars
-  await handlePendingNewPosts().catch((err) => response.send('fail handle new posts start'));
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  await handlePendingNewPosts().catch((_) => response.send('fail handle new posts start'));
   response.send('start handle new posts');
 });
 
