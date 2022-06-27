@@ -2,20 +2,26 @@ import * as admin from 'firebase-admin';
 import { logger } from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
+import Language from '../model/language';
+
+const title = {
+  [Language.korean.toString()]: '새로운 포스트가 도착했습니다',
+  [Language.english.toString()]: 'You have received a new post',
+};
 
 const _firestore = admin.firestore();
 
-export const sendNewPostArrived = async (userDocId: string, postDocId: string, sentDate: Date) => {
+const sendNewPostArrivedMessage = async (userDocId: string, postDocId: string, sentDate: Date) => {
   const userDocument = await _firestore.collection(COLLECTION.USERS).doc(userDocId).get();
 
-  const deviceTokens: string[] = userDocument.get(FIELD.DEVICETOKENS);
+  const deviceTokens: string[] = userDocument.get(FIELD.TOKENS);
+  const systemLanguage: string = userDocument.get(FIELD.SYSTEM_LANGUAGE);
 
   if (deviceTokens?.length > 0) logger.debug(`sendNewPostArrived: ${deviceTokens.join(',')}`);
 
   if (deviceTokens.length > 0) {
     await admin.messaging().sendToDevice(
       deviceTokens,
-      // TODO: localize message by user local info in Firestore
       {
         data: {
           type: 'newPost',
@@ -23,8 +29,7 @@ export const sendNewPostArrived = async (userDocId: string, postDocId: string, s
           receivedDate: sentDate.toISOString(),
         },
         notification: {
-          title: 'New post from someone!',
-          body: `${sentDate.toISOString()}`,
+          title: title[systemLanguage],
         },
       },
       {
@@ -41,6 +46,4 @@ export const sendNewPostArrived = async (userDocId: string, postDocId: string, s
   logger.debug('sendNewPostArrived');
 };
 
-// export async function sendNewReplyArrived() {
-
-// }
+export default sendNewPostArrivedMessage;

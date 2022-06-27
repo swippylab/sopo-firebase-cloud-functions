@@ -3,7 +3,7 @@ import * as functions from 'firebase-functions';
 import { v4 as uuidv4 } from 'uuid';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
-import sendPostToUser from './send_post';
+import sendNewPostArrivedMessage from '../message/new_post_arrived';
 
 const log = functions.logger;
 
@@ -29,12 +29,12 @@ export const onCreatePostTrigger = functions
     let userDocId: string = uuidv4();
 
     // // temp
-    if (newPostData[FIELD.CREATEDDATE]) createdDate = newPostData[FIELD.CREATEDDATE];
+    if (newPostData[FIELD.CREATED_DATE]) createdDate = newPostData[FIELD.CREATED_DATE];
     else createdDate = new Date();
     // if (newPostData[FIELD.ISACTIVATED]) isActivated = newPostData[FIELD.ISACTIVATED];
     // if (newPostData[FIELD.REPLYCOUNT]) replyCount = newPostData[FIELD.REPLYCOUNT];
     // if (newPostData[FIELD.LINKEDCOUNT]) linkedCount = newPostData[FIELD.LINKEDCOUNT];
-    if (newPostData[FIELD.USERDOCID]) userDocId = newPostData[FIELD.USERDOCID];
+    if (newPostData[FIELD.USER_DOC_ID]) userDocId = newPostData[FIELD.USER_DOC_ID];
 
     // const postPrewviewData = {
     //   [FIELD.CREATEDDATE]: createdDate,
@@ -72,14 +72,14 @@ export const onCreatePostTrigger = functions
       .doc(userDocId);
 
     const linkedDate = new Date();
-    const postLinkData = { /* [FIELD.USERDOCID]: userDocId,  */ [FIELD.LINKEDDATE]: linkedDate };
+    const postLinkData = { /* [FIELD.USERDOCID]: userDocId,  */ [FIELD.LINKED_DATE]: linkedDate };
 
     // extra receivable users collection
     const extraReceivableUserRef = firestore.collection(COLLECTION.EXTRARECEIVABLEUSERS).doc();
 
     const extraReceivableData = {
-      [FIELD.USERDOCID]: userDocId,
-      [FIELD.CREATEDDATE]: linkedDate,
+      [FIELD.USER_DOC_ID]: userDocId,
+      [FIELD.CREATED_DATE]: linkedDate,
     };
 
     // batch.set(postPreviewCreateRef, postPrewviewData);
@@ -92,7 +92,13 @@ export const onCreatePostTrigger = functions
 
     log.debug('batch commit');
 
-    await sendPostToUser({ postDocId });
+    await new Promise((resolve) => {
+      setTimeout(resolve, 1000);
+    });
+
+    sendNewPostArrivedMessage(userDocId, postDocId, new Date());
+
+    // await sendPostToUser({ postDocId });
 
     // batchResultList.forEach((element) => {
     //   if (element.writeTime) log.debug(`write time : ${element.writeTime.toDate()}`);

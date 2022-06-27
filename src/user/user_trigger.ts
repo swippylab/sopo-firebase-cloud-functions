@@ -28,12 +28,12 @@ export const onCreateUserTrigger = functions
 
       sendPostDocument = await transaction.get(sendPostRef);
 
-      const totalReceivable = sendPostDocument.get(FIELD.TOTAlRECEIVABLE);
-      const searchFlag = sendPostDocument.get(FIELD.SEARCHFLAG);
+      const totalReceivable = sendPostDocument.get(FIELD.TOTAL_RECEIVABLE);
+      const searchFlag = sendPostDocument.get(FIELD.SEARCH_FLAG);
 
-      transaction.set(receivableUserRef, { [FIELD.SEARCHFLAG]: searchFlag });
+      transaction.set(receivableUserRef, { [FIELD.SEARCH_FLAG]: searchFlag });
 
-      transaction.update(sendPostRef, { [FIELD.TOTAlRECEIVABLE]: totalReceivable + 1 });
+      transaction.update(sendPostRef, { [FIELD.TOTAL_RECEIVABLE]: totalReceivable + 1 });
 
       log.debug(`user creation trigger transaction end`);
     });
@@ -41,7 +41,7 @@ export const onCreateUserTrigger = functions
     // pending post 하나 보내기
     const pendingPostsRef = firestore.collection(COLLECTION.PENDINGPOSTS);
 
-    const pendPostsSnapshot = await pendingPostsRef.orderBy(FIELD.CREATEDDATE).limit(1).get();
+    const pendPostsSnapshot = await pendingPostsRef.orderBy(FIELD.CREATED_DATE).limit(1).get();
 
     for (const doc of pendPostsSnapshot.docs) {
       const p_postDocId = doc.id;
@@ -70,7 +70,7 @@ export const onUpdateUserTrigger = functions
 
     const previousValue = change.before.data();
 
-    if (previousValue[FIELD.DELETEDDATE] !== newValue[FIELD.DELETEDDATE]) {
+    if (previousValue[FIELD.DELETED_DATE] !== newValue[FIELD.DELETED_DATE]) {
       log.debug(`<${userDocId}> deleteDate update`);
       onUpdateDeletedDate(userDocId);
     }
@@ -105,12 +105,12 @@ async function onUpdateDeletedDate(userDocId: string) {
   await firestore.runTransaction(async (transaction) => {
     const sendPostDocument = await transaction.get(sendPostRef);
 
-    const totalReceivable = sendPostDocument.get(FIELD.TOTAlRECEIVABLE);
+    const totalReceivable = sendPostDocument.get(FIELD.TOTAL_RECEIVABLE);
 
     transaction.delete(receivableUserRef);
 
     const updateTotalReceivable = totalReceivable - 1;
-    transaction.update(sendPostRef, { [FIELD.TOTAlRECEIVABLE]: updateTotalReceivable });
+    transaction.update(sendPostRef, { [FIELD.TOTAL_RECEIVABLE]: updateTotalReceivable });
 
     log.debug(`<${userDocId}> account delete / totalReceivable : ${updateTotalReceivable}`);
   });
