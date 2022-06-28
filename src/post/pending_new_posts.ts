@@ -2,16 +2,17 @@ import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
-import { deleteNewPostInUser, handleRejectionPost } from './new_posts';
+import { deleteNewPostInUserAndPendingNewPost, handleRejectionPost } from './new_posts';
 import sendPostToUser from './send_post';
 
 const maxWaitHour = 4;
-const executionDelayHour = 4;
+const executionDelayHour = 2;
 
 const log = functions.logger;
 
 export const onShceduledHandlePendingNewPosts = functions.pubsub
-  .schedule(`every ${executionDelayHour} hours`)
+  .schedule(`every ${executionDelayHour} minutes`)
+  // .schedule(`every ${executionDelayHour} hours`)
   // .schedule(`0 */${executionDelayHour} * * *`)
   // .schedule(`* * * * *`)
   .onRun(async (/* context */) => {
@@ -37,13 +38,16 @@ export async function handlePendingNewPosts() {
     const userDocId = doc.get(FIELD.USER_DOC_ID);
     const isReading = doc.get(FIELD.IS_READING);
     log.debug(
-      `[${doc.id}] pending new post / received date : ${doc.get(
-        FIELD.DATE,
-      )} / user with doc : <${userDocId}> `,
+      `[${doc.id}] pending new post / received date : ${doc
+        .get(FIELD.DATE)
+        .toDate()} / user with doc : <${userDocId}> `,
     );
 
+    log.debug(`[${doc.id}] pending new post / is reading : ${isReading}`);
     let sendFlag = true;
 
+    // await doc.ref.delete(); // deleteNewPostInUser에서 동일 동작
+    log.debug(`[${doc.id}] pending new post delete`);
     if (!isReading) {
       const postDocRef = admin.firestore().collection(COLLECTION.POSTS).doc(postDocId);
 
@@ -51,6 +55,8 @@ export async function handlePendingNewPosts() {
         [FIELD.CURRENT_RECEIVED_USER_DOC_ID]: null,
         [FIELD.IS_READING]: false,
       });
+
+      log.debug(`[${doc.id}] doc is reading and current received user doc id reset`);
     } else {
       sendFlag = await handleRejectionPost(postDocId);
     }
@@ -58,9 +64,8 @@ export async function handlePendingNewPosts() {
     if (sendFlag) {
       await sendPostToUser({ postDocId, userDocId });
     } else {
-      await deleteNewPostInUser(userDocId, postDocId);
+      await deleteNewPostInUserAndPendingNewPost(userDocId, postDocId);
     }
-    doc.ref.delete();
   }
 
   log.debug('end of handle pending new posts function');

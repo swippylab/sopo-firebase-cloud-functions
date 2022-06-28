@@ -4,7 +4,7 @@ import { COLLECTION } from '../constant/collection';
 import { DOCUMENT } from '../constant/document';
 import { FIELD } from '../constant/field';
 import sendNewPostArrivedMessage from '../message/new_post_arrived';
-import { deleteNewPostInUser } from './new_posts';
+import { deleteNewPostInUserAndPendingNewPost } from './new_posts';
 const log = functions.logger;
 const firestore = admin.firestore();
 interface sendPostToUserArgsType {
@@ -21,7 +21,7 @@ sendPostToUserArgsType) {
 
   // 보내기 전에 new Posts doc들을 지운다
   if (sendUserDocId) {
-    await deleteNewPostInUser(sendUserDocId, postDocId);
+    await deleteNewPostInUserAndPendingNewPost(sendUserDocId, postDocId);
   }
 
   // 1. get globalVariables/systemPost

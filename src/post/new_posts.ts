@@ -122,6 +122,7 @@ export const newPostHandleUpdateTrigger = functions
   });
 
 export async function handleRejectionPost(postDocId: string) {
+  log.debug(`[${postDocId}] doc / handle rejection function start`);
   const postDocRef = await _firestore.collection(COLLECTION.POSTS).doc(postDocId);
 
   let sendFlag = true;
@@ -160,7 +161,11 @@ export async function handleRejectionPost(postDocId: string) {
   return sendFlag;
 }
 
-export async function deleteNewPostInUser(sendUserDocId: string, postDocId: string) {
+export async function deleteNewPostInUserAndPendingNewPost(
+  sendUserDocId: string,
+  postDocId: string,
+) {
+  log.debug(`[${postDocId}] doc delete in new posts user [${sendUserDocId}] / pending new posts`);
   const deleteBatch = _firestore.batch();
   // delete userNewPost
   const newPostRef = _firestore
