@@ -11,8 +11,8 @@ const executionDelayHour = 2;
 const log = functions.logger;
 
 export const onShceduledHandlePendingNewPosts = functions.pubsub
-  .schedule(`every ${executionDelayHour} minutes`)
-  // .schedule(`every ${executionDelayHour} hours`)
+  // .schedule(`every ${executionDelayHour} minutes`)
+  .schedule(`every ${executionDelayHour} hours`)
   // .schedule(`0 */${executionDelayHour} * * *`)
   // .schedule(`* * * * *`)
   .onRun(async (/* context */) => {
