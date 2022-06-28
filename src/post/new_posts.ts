@@ -20,11 +20,13 @@ export const newPostHandleUpdateTrigger = functions
     const receivedDate: Date = updateData[FIELD.DATE];
     const isAccepted: boolean = updateData[FIELD.IS_ACCEPTED];
 
-    const batch = _firestore.batch();
-
     log.debug(`[${postDocId}] post is accepted : ${isAccepted} by <${userDocId}>`);
 
+    let sendFlag = true;
+
     if (isAccepted) {
+      const batch = _firestore.batch();
+
       const userSubCollectionData = { [FIELD.DATE]: receivedDate };
 
       const linkedDate = new Date();
@@ -56,28 +58,13 @@ export const newPostHandleUpdateTrigger = functions
 
       // write at liniks Collection
       batch.set(postLinkRef, postLinkData);
-    } else {
-      const postRejectionRef = _firestore
-        .collection(COLLECTION.POSTS)
-        .doc(postDocId)
-        .collection(COLLECTION.REJECTIONS)
-        .doc(userDocId);
 
-      batch.set(postRejectionRef, {
-        // [FIELD.USERDOCID]: userDocId,
-        [FIELD.REJECTED_DATE]: new Date(),
-      });
-    }
+      const batchPromise = batch.commit();
+      // wait for write
+      await batchPromise;
 
-    const batchPromise = batch.commit();
-    // wait for write
-    await batchPromise;
+      log.debug(`[${postDocId}] new Posts trigger batch commit(sync)`);
 
-    log.debug(`[${postDocId}] new Posts trigger batch commit(sync)`);
-
-    let sendFlag = true;
-    // post process
-    if (isAccepted) {
       // updateLinkCountAndPreviewLinkedId({ postDocId /* , userDocId */ });
       log.debug(`[${postDocId}] update linked count`);
 
@@ -108,8 +95,17 @@ export const newPostHandleUpdateTrigger = functions
       //Todo: interator post/docId/links / send message
       // 찾는중 / linked count
     } else {
+      // batch.set(postRejectionRef, {
+      //   // [FIELD.USERDOCID]: userDocId,
+      //   [FIELD.REJECTED_DATE]: new Date(),
+      // });
+
+      // const batchPromise = batch.commit();
+      // wait for write
+      // await batchPromise;
+
       //get lastConsecutiveRejectedTimes
-      sendFlag = await handleRejectionPost(postDocId);
+      sendFlag = await handleRejectionPost(postDocId, userDocId);
 
       //Todo: interator post/docId/links / send message
       // 찾는중 or 멈춤 /
@@ -121,15 +117,30 @@ export const newPostHandleUpdateTrigger = functions
     }
   });
 
-export async function handleRejectionPost(postDocId: string) {
-  log.debug(`[${postDocId}] doc / handle rejection function start`);
+export async function handleRejectionPost(postDocId: string, userDocId: string) {
+  log.debug(`[${postDocId}] doc / handle rejection function start / reject user : <${userDocId}>`);
   const postDocRef = await _firestore.collection(COLLECTION.POSTS).doc(postDocId);
+
+  const postRejectionRef = _firestore
+    .collection(COLLECTION.POSTS)
+    .doc(postDocId)
+    .collection(COLLECTION.REJECTIONS)
+    .doc(userDocId);
+
+  // await postRejectionRef.set({
+  //   [FIELD.REJECTED_DATE]: new Date(),
+  // });
 
   let sendFlag = true;
   await _firestore.runTransaction(async (transaction) => {
     const postDoc = await transaction.get(postDocRef);
 
     let lastConsecutiveRejectedTimes = postDoc.get(FIELD.LAST_CONSECUTIVE_REJECTED_TIMES);
+
+    // common
+    transaction.set(postRejectionRef, {
+      [FIELD.REJECTED_DATE]: new Date(),
+    });
 
     if (!lastConsecutiveRejectedTimes) {
       lastConsecutiveRejectedTimes = 0;

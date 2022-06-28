@@ -61,7 +61,7 @@ export async function handlePendingNewPosts() {
 
       log.debug(`[${doc.id}] doc is reading and current received user doc id reset`);
     } else {
-      sendFlag = await handleRejectionPost(postDocId);
+      sendFlag = await handleRejectionPost(postDocId, userDocId);
     }
 
     if (sendFlag) {
