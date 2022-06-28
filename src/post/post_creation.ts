@@ -3,6 +3,7 @@ import * as functions from 'firebase-functions';
 import { v4 as uuidv4 } from 'uuid';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
+import sendPostToUser from './send_post';
 
 const log = functions.logger;
 
@@ -95,7 +96,7 @@ export const onCreatePostTrigger = functions
       setTimeout(resolve, 1000);
     });
 
-    // await sendPostToUser({ postDocId });
+    await sendPostToUser({ postDocId });
 
     // batchResultList.forEach((element) => {
     //   if (element.writeTime) log.debug(`write time : ${element.writeTime.toDate()}`);
