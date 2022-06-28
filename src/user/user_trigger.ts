@@ -102,12 +102,21 @@ async function onUpdateDeletedDate(userDocId: string) {
   const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
   const receivableUserRef = firestore.collection(COLLECTION.RECEIVABLEUSERS).doc(userDocId);
 
+  const extraReceivableQuerySnapshot = await firestore
+    .collection(COLLECTION.EXTRARECEIVABLEUSERS)
+    .where(FIELD.USER_DOC_ID, '==', userDocId)
+    .get();
+
   await firestore.runTransaction(async (transaction) => {
     const sendPostDocument = await transaction.get(sendPostRef);
 
     const totalReceivable = sendPostDocument.get(FIELD.TOTAL_RECEIVABLE);
 
     transaction.delete(receivableUserRef);
+
+    for (const doc of extraReceivableQuerySnapshot.docs) {
+      transaction.delete(doc.ref);
+    }
 
     const updateTotalReceivable = totalReceivable - 1;
     transaction.update(sendPostRef, { [FIELD.TOTAL_RECEIVABLE]: updateTotalReceivable });
