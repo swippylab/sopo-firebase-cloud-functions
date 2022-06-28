@@ -41,7 +41,7 @@ export const onCreateUserTrigger = functions
     // pending post 하나 보내기
     const pendingPostsRef = firestore.collection(COLLECTION.PENDINGPOSTS);
 
-    const pendPostsSnapshot = await pendingPostsRef.orderBy(FIELD.CREATED_DATE).limit(1).get();
+    const pendPostsSnapshot = await pendingPostsRef.orderBy(FIELD.DATE).limit(1).get();
 
     for (const doc of pendPostsSnapshot.docs) {
       const p_postDocId = doc.id;

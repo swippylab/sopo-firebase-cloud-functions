@@ -122,7 +122,7 @@ sendPostToUserArgsType) {
   if (!result) {
     log.debug(`not found send user id / insert pending collection`);
     const pendingPostRef = firestore.collection(COLLECTION.PENDINGPOSTS).doc(postDocId);
-    await pendingPostRef.set({ [FIELD.CREATED_DATE]: new Date() });
+    await pendingPostRef.set({ [FIELD.DATE]: new Date() });
   }
 }
 
