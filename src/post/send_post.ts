@@ -151,7 +151,9 @@ export async function setDataForSendingPostToUser({
   const postRef = firestore.collection(COLLECTION.POSTS).doc(postDocId);
 
   const newPostData = { [FIELD.DATE]: receivedDate, [FIELD.IS_ACCEPTED]: null };
-  const pendNewPostData = { [FIELD.DATE]: receivedDate, [FIELD.USER_DOC_ID]: selectedUserId };
+  const pendNewPostData = {
+    [FIELD.DATE]: receivedDate /* , [FIELD.USER_DOC_ID]: selectedUserId */,
+  };
   const postDocData = { [FIELD.CURRENT_RECEIVED_USER_DOC_ID]: selectedUserId };
 
   const newPostPromise = newPostRef.set(newPostData);

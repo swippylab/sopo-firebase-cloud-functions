@@ -35,8 +35,11 @@ export async function handlePendingNewPosts() {
 
   for (const doc of querySnapshot.docs) {
     const postDocId = doc.id;
-    const userDocId = doc.get(FIELD.USER_DOC_ID);
-    const isReading = doc.get(FIELD.IS_READING);
+
+    const postDoc = await firestore.collection(COLLECTION.POSTS).doc(postDocId).get();
+    const isReading = postDoc.get(FIELD.IS_READING);
+    const userDocId = postDoc.get(FIELD.CURRENT_RECEIVED_USER_DOC_ID);
+
     log.debug(
       `[${doc.id}] pending new post / received date : ${doc
         .get(FIELD.DATE)
