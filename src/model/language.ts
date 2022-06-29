@@ -1,5 +1,5 @@
 enum Language {
-  korean = 'korean',
-  english = 'english',
+  korean = 'ko',
+  english = 'en',
 }
 export default Language;
