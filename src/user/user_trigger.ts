@@ -95,6 +95,13 @@ async function onUpdateDeletedDate(userDocId: string) {
     .collection(COLLECTION.NEWPOSTS)
     .get();
 
+  let newPostIds: string[] = [];
+
+  for (const doc of newPostsSnapshot.docs) {
+    newPostIds.push(doc.id);
+    await deleteNewPostInUserAndPendingNewPost({ userDocId, postDocId: doc.id });
+  }
+
   // totalReceivable count update and remove receivable users
   const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
   const receivableUserRef = firestore.collection(COLLECTION.RECEIVABLEUSERS).doc(userDocId);
@@ -121,8 +128,7 @@ async function onUpdateDeletedDate(userDocId: string) {
     log.debug(`<${userDocId}> account delete / totalReceivable : ${updateTotalReceivable}`);
   });
 
-  for (const doc of newPostsSnapshot.docs) {
-    await deleteNewPostInUserAndPendingNewPost({ userDocId, postDocId: doc.id });
-    await sendPostToUser({ postDocId: doc.id });
+  for (const docId of newPostIds) {
+    await sendPostToUser({ postDocId: docId });
   }
 }
