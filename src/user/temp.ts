@@ -1,13 +1,13 @@
-import * as functions from 'firebase-functions';
-import { handlePendingNewPosts } from '../post/pending_new_posts';
+// import * as functions from 'firebase-functions';
+// import { handlePendingNewPosts } from '../post/pending_new_posts';
 
 // const log = functions.logger;
 
-export const callHandlePendingNewPosts = functions.https.onRequest(async (request, response) => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  await handlePendingNewPosts().catch((_) => response.send('fail handle new posts start'));
-  response.send('start handle new posts');
-});
+// export const callHandlePendingNewPosts = functions.https.onRequest(async (request, response) => {
+//   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+//   await handlePendingNewPosts().catch((_) => response.send('fail handle new posts start'));
+//   response.send('start handle new posts');
+// });
 
 // export const queryTest = functions.https.onRequest(async (request, response) => {
 //   const selectedId = await queryToReceivableUsers({

@@ -165,7 +165,7 @@ async function setDataForSendingToPending({
 }: {
   postDocId: string;
 }): Promise<[admin.firestore.WriteResult, admin.firestore.WriteResult]> {
-  log.debug(`not found send user id / insert pending collection`);
+  log.debug(`[${postDocId}] not found send user id / insert pending collection`);
   const pendingPostRef = firestore.collection(COLLECTION.PENDINGPOSTS).doc(postDocId);
   const postRef = firestore.collection(COLLECTION.POSTS).doc(postDocId);
 

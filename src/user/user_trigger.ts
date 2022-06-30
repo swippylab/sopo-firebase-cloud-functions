@@ -10,7 +10,7 @@ const firestore = admin.firestore();
 const log = functions.logger;
 
 export const onCreateUserTrigger = functions
-  .runWith({})
+  .runWith({ failurePolicy: true })
   .firestore.document(`${COLLECTION.USERS}/{userDocId}`)
   .onCreate(async (snapshot, context) => {
     const userDocId = context.params.userDocId;
@@ -95,11 +95,6 @@ async function onUpdateDeletedDate(userDocId: string) {
     .collection(COLLECTION.NEWPOSTS)
     .get();
 
-  for (const doc of newPostsSnapshot.docs) {
-    await deleteNewPostInUserAndPendingNewPost({ userDocId, postDocId: doc.id });
-    await sendPostToUser({ postDocId: doc.id });
-  }
-
   // totalReceivable count update and remove receivable users
   const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
   const receivableUserRef = firestore.collection(COLLECTION.RECEIVABLEUSERS).doc(userDocId);
@@ -125,4 +120,9 @@ async function onUpdateDeletedDate(userDocId: string) {
 
     log.debug(`<${userDocId}> account delete / totalReceivable : ${updateTotalReceivable}`);
   });
+
+  for (const doc of newPostsSnapshot.docs) {
+    await deleteNewPostInUserAndPendingNewPost({ userDocId, postDocId: doc.id });
+    await sendPostToUser({ postDocId: doc.id });
+  }
 }
