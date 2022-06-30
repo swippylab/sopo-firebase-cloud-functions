@@ -30,12 +30,8 @@ export const onCreatePostTrigger = functions
     else createdDate = new Date();
     if (newPostData[FIELD.USER_DOC_ID]) userDocId = newPostData[FIELD.USER_DOC_ID];
 
-    // myPosts sub collection in user doc
-    const userMyPostCreateRef = _firestore
-      .collection(COLLECTION.USERS)
-      .doc(userDocId)
-      .collection(COLLECTION.MYPOSTS)
-      .doc(postDocId);
+    // sub collection in user data
+    const userSubCollectionData = { [FIELD.DATE]: createdDate };
 
     // allPosts sub collection in user doc
     const userAllPostCreateRef = _firestore
@@ -44,10 +40,14 @@ export const onCreatePostTrigger = functions
       .collection(COLLECTION.ALLPOSTS)
       .doc(postDocId);
 
-    // sub collection in user data
-    const userSubCollectionData = { [FIELD.DATE]: createdDate };
-
     const allPromise = userAllPostCreateRef.set(userSubCollectionData);
+
+    // myPosts sub collection in user doc
+    const userMyPostCreateRef = _firestore
+      .collection(COLLECTION.USERS)
+      .doc(userDocId)
+      .collection(COLLECTION.MYPOSTS)
+      .doc(postDocId);
     const myPromise = userMyPostCreateRef.set(userSubCollectionData);
 
     // links sub collection in self

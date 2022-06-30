@@ -129,7 +129,7 @@ export async function setDataForSendingPostToUser({
   postDocId: string;
   receivedDate: Date;
 }): Promise<
-  [admin.firestore.WriteResult, admin.firestore.WriteResult /* , admin.firestore.WriteResult */]
+  [admin.firestore.WriteResult, admin.firestore.WriteResult, admin.firestore.WriteResult]
 > {
   // user new posts
   const newPostRef = firestore
@@ -142,22 +142,22 @@ export async function setDataForSendingPostToUser({
   const pendingNewPostRef = firestore.collection(COLLECTION.PEDINGNEWPOSTS).doc(postDocId);
 
   // post doc ref
-  // const postRef = firestore.collection(COLLECTION.POSTS).doc(postDocId);
+  const postRef = firestore.collection(COLLECTION.POSTS).doc(postDocId);
 
   const newPostData = { [FIELD.DATE]: receivedDate, [FIELD.IS_ACCEPTED]: null };
   const pendNewPostData = {
     [FIELD.DATE]: receivedDate /* , [FIELD.USER_DOC_ID]: selectedUserId */,
   };
-  // const postDocData = {
-  //   [FIELD.CURRENT_RECEIVED_USER_DOC_ID]: selectedUserId,
-  //   [FIELD.IS_READING]: false,
-  // };
+  const postDocData = {
+    [FIELD.CURRENT_RECEIVED_USER_DOC_ID]: selectedUserId,
+    [FIELD.IS_READING]: false,
+  };
 
   const newPostPromise = newPostRef.set(newPostData);
   const pendingNewPostsPromise = pendingNewPostRef.set(pendNewPostData);
-  // const postPromise = postRef.update(postDocData);
+  const postPromise = postRef.update(postDocData);
 
-  return Promise.all([newPostPromise, pendingNewPostsPromise /* , postPromise */]);
+  return Promise.all([newPostPromise, pendingNewPostsPromise, postPromise]);
 }
 
 async function setDataForSendingToPending({
