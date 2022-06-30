@@ -4,25 +4,24 @@ import { COLLECTION } from '../constant/collection';
 import { DOCUMENT } from '../constant/document';
 import { FIELD } from '../constant/field';
 import sendNewPostArrivedMessage from '../message/new_post_arrived';
-import { deleteNewPostInUserAndPendingNewPost } from './new_posts';
 const log = functions.logger;
 const firestore = admin.firestore();
 interface sendPostToUserArgsType {
   postDocId: string;
-  userDocId?: string;
+  // userDocId?: string;
 }
 
 export default async function sendPostToUser({
   postDocId,
-  userDocId: sendUserDocId,
 }: // userDocId: sendUserDocId,
+// userDocId: sendUserDocId,
 sendPostToUserArgsType) {
   log.debug(`[${postDocId}] start send post`);
 
   // 보내기 전에 new Posts doc들을 지운다
-  if (sendUserDocId) {
-    await deleteNewPostInUserAndPendingNewPost(sendUserDocId, postDocId);
-  }
+  // if (sendUserDocId) {
+  //   await deleteNewPostInUserAndPendingNewPost(sendUserDocId, postDocId);
+  // }
 
   // 1. get globalVariables/systemPost
   const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);

@@ -17,19 +17,23 @@ export const newPostHandleUpdateTrigger = functions
     const postDocId: string = context.params.postDocId;
 
     const updateData = changed.after.data();
-    const receivedDate: Date = updateData[FIELD.DATE];
+    // const receivedDate: Date = updateData[FIELD.DATE];
     const isAccepted: boolean = updateData[FIELD.IS_ACCEPTED];
+
+    // delete new post in user and pending new post, 다른 트리거랑 중복 가능성 배제를 위해 먼저 제거
+    await deleteNewPostInUserAndPendingNewPost({ userDocId, postDocId });
 
     log.debug(`[${postDocId}] post is accepted : ${isAccepted} by <${userDocId}>`);
 
     let sendFlag = true;
 
     if (isAccepted) {
+      const linkedDate = new Date();
       const batch = _firestore.batch();
 
-      const userSubCollectionData = { [FIELD.DATE]: receivedDate };
+      // const userSubCollectionData = { [FIELD.DATE]: receivedDate };
+      const userSubCollectionData = { [FIELD.DATE]: linkedDate };
 
-      const linkedDate = new Date();
       const postLinkData = { /* [FIELD.USERDOCID]: userDocId, */ [FIELD.LINKED_DATE]: linkedDate };
 
       const userReceivePostRef = _firestore
@@ -89,7 +93,7 @@ export const newPostHandleUpdateTrigger = functions
           [FIELD.IS_READING]: false,
         });
 
-        log.debug(`[${postDocId}] update previewPost, post transaction end`);
+        log.debug(`[${postDocId}] update linkedCount transaction end`);
       });
 
       //Todo: interator post/docId/links / send message
@@ -113,7 +117,7 @@ export const newPostHandleUpdateTrigger = functions
 
     if (sendFlag) {
       log.debug(`[${[postDocId]}] post to somewhere from <${userDocId}>`);
-      await sendPostToUser({ postDocId, userDocId });
+      await sendPostToUser({ postDocId });
     }
   });
 
@@ -172,16 +176,19 @@ export async function handleRejectionPost(postDocId: string, userDocId: string) 
   return sendFlag;
 }
 
-export async function deleteNewPostInUserAndPendingNewPost(
-  sendUserDocId: string,
-  postDocId: string,
-) {
-  log.debug(`[${postDocId}] doc delete in new posts user [${sendUserDocId}] / pending new posts`);
+export async function deleteNewPostInUserAndPendingNewPost({
+  userDocId,
+  postDocId,
+}: {
+  userDocId: string;
+  postDocId: string;
+}) {
+  log.debug(`[${postDocId}] doc delete in new posts user [${userDocId}] / pending new posts`);
   const deleteBatch = _firestore.batch();
   // delete userNewPost
   const newPostRef = _firestore
     .collection(COLLECTION.USERS)
-    .doc(sendUserDocId)
+    .doc(userDocId)
     .collection(COLLECTION.NEWPOSTS)
     .doc(postDocId);
   deleteBatch.delete(newPostRef);

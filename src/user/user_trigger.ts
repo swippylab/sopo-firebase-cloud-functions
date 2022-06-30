@@ -3,6 +3,7 @@ import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { DOCUMENT } from '../constant/document';
 import { FIELD } from '../constant/field';
+import { deleteNewPostInUserAndPendingNewPost } from '../post/new_posts';
 import sendPostToUser, { setDataForSendingPostToUser } from '../post/send_post';
 
 const firestore = admin.firestore();
@@ -95,7 +96,8 @@ async function onUpdateDeletedDate(userDocId: string) {
     .get();
 
   for (const doc of newPostsSnapshot.docs) {
-    await sendPostToUser({ postDocId: doc.id, userDocId });
+    await deleteNewPostInUserAndPendingNewPost({ userDocId, postDocId: doc.id });
+    await sendPostToUser({ postDocId: doc.id });
   }
 
   // totalReceivable count update and remove receivable users

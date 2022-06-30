@@ -64,10 +64,9 @@ export async function handlePendingNewPosts() {
       sendFlag = await handleRejectionPost(postDocId, userDocId);
     }
 
+    await deleteNewPostInUserAndPendingNewPost({ userDocId, postDocId });
     if (sendFlag) {
-      await sendPostToUser({ postDocId, userDocId });
-    } else {
-      await deleteNewPostInUserAndPendingNewPost(userDocId, postDocId);
+      await sendPostToUser({ postDocId });
     }
   }
 
