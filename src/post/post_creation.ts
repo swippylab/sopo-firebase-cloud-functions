@@ -6,14 +6,13 @@ import { FIELD } from '../constant/field';
 import sendPostToUser from './send_post';
 
 const log = functions.logger;
+const _firestore = admin.firestore();
 
 export const onCreatePostTrigger = functions
   .runWith({ failurePolicy: true })
   .firestore.document(`${COLLECTION.POSTS}/{postDocId}`)
   .onCreate(async (snap, context) => {
     // store admin firestore
-    const firestore = admin.firestore();
-    const batch = firestore.batch();
 
     // get wildcard post id
     const postDocId = context.params.postDocId;
@@ -23,39 +22,23 @@ export const onCreatePostTrigger = functions
 
     // // create preview post
     let createdDate: Date | undefined = undefined;
-    // let isActivated: boolean = true;
-    // let replyCount: number = 0;
-    // let linkedCount: number = 1;
+
     let userDocId: string = uuidv4();
 
     // // temp
     if (newPostData[FIELD.CREATED_DATE]) createdDate = newPostData[FIELD.CREATED_DATE];
     else createdDate = new Date();
-    // if (newPostData[FIELD.ISACTIVATED]) isActivated = newPostData[FIELD.ISACTIVATED];
-    // if (newPostData[FIELD.REPLYCOUNT]) replyCount = newPostData[FIELD.REPLYCOUNT];
-    // if (newPostData[FIELD.LINKEDCOUNT]) linkedCount = newPostData[FIELD.LINKEDCOUNT];
     if (newPostData[FIELD.USER_DOC_ID]) userDocId = newPostData[FIELD.USER_DOC_ID];
 
-    // const postPrewviewData = {
-    //   [FIELD.CREATEDDATE]: createdDate,
-    //   [FIELD.ISACTIVATED]: isActivated,
-    //   [FIELD.REPLYCOUNT]: replyCount,
-    //   [FIELD.LINKEDCOUNT]: linkedCount,
-    //   [FIELD.LINKEDUSERDOCIDS]: [userDocId],
-    // };
-
-    // preview post collection
-    // const postPreviewCreateRef = firestore.collection(COLLECTION.POSTPREVIEWS).doc(postDocId);
-
     // myPosts sub collection in user doc
-    const userMyPostCreateRef = firestore
+    const userMyPostCreateRef = _firestore
       .collection(COLLECTION.USERS)
       .doc(userDocId)
       .collection(COLLECTION.MYPOSTS)
       .doc(postDocId);
 
     // allPosts sub collection in user doc
-    const userAllPostCreateRef = firestore
+    const userAllPostCreateRef = _firestore
       .collection(COLLECTION.USERS)
       .doc(userDocId)
       .collection(COLLECTION.ALLPOSTS)
@@ -64,8 +47,11 @@ export const onCreatePostTrigger = functions
     // sub collection in user data
     const userSubCollectionData = { [FIELD.DATE]: createdDate };
 
+    const allPromise = userAllPostCreateRef.set(userSubCollectionData);
+    const myPromise = userMyPostCreateRef.set(userSubCollectionData);
+
     // links sub collection in self
-    const postLinkRef = firestore
+    const postLinkRef = _firestore
       .collection(COLLECTION.POSTS)
       .doc(postDocId)
       .collection(COLLECTION.LINKS)
@@ -74,27 +60,25 @@ export const onCreatePostTrigger = functions
     const linkedDate = new Date();
     const postLinkData = { /* [FIELD.USERDOCID]: userDocId,  */ [FIELD.LINKED_DATE]: linkedDate };
 
+    const linksPromise = postLinkRef.set(postLinkData);
+
     // extra receivable users collection
-    const extraReceivableUserRef = firestore.collection(COLLECTION.EXTRARECEIVABLEUSERS).doc();
+    const extraReceivableUserRef = _firestore.collection(COLLECTION.EXTRARECEIVABLEUSERS).doc();
 
     const extraReceivableData = {
       [FIELD.USER_DOC_ID]: userDocId,
       [FIELD.CREATED_DATE]: linkedDate,
     };
 
-    // batch.set(postPreviewCreateRef, postPrewviewData);
-    batch.set(userMyPostCreateRef, userSubCollectionData);
-    batch.set(userAllPostCreateRef, userSubCollectionData);
-    batch.set(postLinkRef, postLinkData);
-    batch.set(extraReceivableUserRef, extraReceivableData);
+    const extraPromise = extraReceivableUserRef.set(extraReceivableData);
 
-    /* const batchResultList =  */ await batch.commit();
+    await Promise.all([allPromise, myPromise, linksPromise, extraPromise]);
 
-    log.debug('batch commit');
+    log.debug(`[${postDocId} create trigger write / end]`);
 
-    await new Promise((resolve) => {
-      setTimeout(resolve, 1000);
-    });
+    // await new Promise((resolve) => {
+    //   setTimeout(resolve, 1000);
+    // });
 
     await sendPostToUser({ postDocId });
 
