@@ -89,8 +89,8 @@ export const newPostHandleUpdateTrigger = functions
         transaction.update(postDocRef, {
           [FIELD.LINKED_COUNT]: updateLinkedCount,
           [FIELD.LAST_CONSECUTIVE_REJECTED_TIMES]: 0,
-          [FIELD.CURRENT_RECEIVED_USER_DOC_ID]: null,
-          [FIELD.IS_READING]: false,
+          // [FIELD.CURRENT_RECEIVED_USER_DOC_ID]: null,
+          // [FIELD.IS_READING]: false,
         });
 
         log.debug(`[${postDocId}] update linkedCount transaction end`);
@@ -109,7 +109,7 @@ export const newPostHandleUpdateTrigger = functions
       // await batchPromise;
 
       //get lastConsecutiveRejectedTimes
-      sendFlag = await handleRejectionPost(postDocId, userDocId);
+      sendFlag = await validateRejectionPost(postDocId, userDocId);
 
       //Todo: interator post/docId/links / send message
       // 찾는중 or 멈춤 /
@@ -121,7 +121,7 @@ export const newPostHandleUpdateTrigger = functions
     }
   });
 
-export async function handleRejectionPost(postDocId: string, userDocId: string) {
+export async function validateRejectionPost(postDocId: string, userDocId: string) {
   log.debug(`[${postDocId}] doc / handle rejection function start / reject user : <${userDocId}>`);
   const postDocRef = await _firestore.collection(COLLECTION.POSTS).doc(postDocId);
 
@@ -162,14 +162,14 @@ export async function handleRejectionPost(postDocId: string, userDocId: string) 
       transaction.update(postDocRef, {
         [FIELD.LAST_CONSECUTIVE_REJECTED_TIMES]: lastConsecutiveRejectedTimes,
         [FIELD.IS_ACTIVATED]: false,
-        [FIELD.CURRENT_RECEIVED_USER_DOC_ID]: null,
-        [FIELD.IS_READING]: false,
+        // [FIELD.CURRENT_RECEIVED_USER_DOC_ID]: null,
+        // [FIELD.IS_READING]: false,
       });
     } else {
       transaction.update(postDocRef, {
         [FIELD.LAST_CONSECUTIVE_REJECTED_TIMES]: lastConsecutiveRejectedTimes,
-        [FIELD.CURRENT_RECEIVED_USER_DOC_ID]: null,
-        [FIELD.IS_READING]: false,
+        // [FIELD.CURRENT_RECEIVED_USER_DOC_ID]: null,
+        // [FIELD.IS_READING]: false,
       });
     }
   });
@@ -184,18 +184,29 @@ export async function deleteNewPostInUserAndPendingNewPost({
   postDocId: string;
 }) {
   log.debug(`[${postDocId}] doc delete in new posts user [${userDocId}] / pending new posts`);
-  const deleteBatch = _firestore.batch();
+
+  const batch = _firestore.batch();
+
+  // post의 현재유저와 읽음상태 초기화
+  log.debug(`[${postDocId}] doc is reading and current received user doc id reset`);
+  const postRef = _firestore.collection(COLLECTION.POSTS).doc(postDocId);
+  batch.update(postRef, {
+    [FIELD.CURRENT_RECEIVED_USER_DOC_ID]: null,
+    [FIELD.IS_READING]: false,
+  });
+
   // delete userNewPost
   const newPostRef = _firestore
     .collection(COLLECTION.USERS)
     .doc(userDocId)
     .collection(COLLECTION.NEWPOSTS)
     .doc(postDocId);
-  deleteBatch.delete(newPostRef);
   // batch.delete(changed.after.ref); // warning으로 상위 코드로 대체하였으나 어느순간부터 warning 안뜸
+  batch.delete(newPostRef);
+
   // delete pending new post
   const pendingNewPostRef = _firestore.collection(COLLECTION.PEDINGNEWPOSTS).doc(postDocId);
-  deleteBatch.delete(pendingNewPostRef);
+  batch.delete(pendingNewPostRef);
 
-  await deleteBatch.commit();
+  await batch.commit();
 }

@@ -2,7 +2,7 @@ import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
-import { deleteNewPostInUserAndPendingNewPost, handleRejectionPost } from './new_posts';
+import { deleteNewPostInUserAndPendingNewPost, validateRejectionPost } from './new_posts';
 import sendPostToUser from './send_post';
 
 const maxWaitHour = 4;
@@ -51,7 +51,9 @@ export async function handlePendingNewPosts() {
 
     // await doc.ref.delete(); // deleteNewPostInUser에서 동일 동작
     log.debug(`[${doc.id}] pending new post delete`);
-    if (!isReading) {
+    if (isReading) {
+      sendFlag = await validateRejectionPost(postDocId, userDocId);
+    } /*  else {
       const postDocRef = admin.firestore().collection(COLLECTION.POSTS).doc(postDocId);
 
       await postDocRef.update({
@@ -60,9 +62,7 @@ export async function handlePendingNewPosts() {
       });
 
       log.debug(`[${doc.id}] doc is reading and current received user doc id reset`);
-    } else {
-      sendFlag = await handleRejectionPost(postDocId, userDocId);
-    }
+    } */
 
     await deleteNewPostInUserAndPendingNewPost({ userDocId, postDocId });
     if (sendFlag) {
