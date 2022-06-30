@@ -117,12 +117,7 @@ sendPostToUserArgsType) {
   // 4. send post to selected user by query
   const result = await sendPostByQuery(postDocId, isUsingExtra, searchFlag);
 
-  // 5. send to pending posts colleciton
-  if (!result) {
-    log.debug(`not found send user id / insert pending collection`);
-    const pendingPostRef = firestore.collection(COLLECTION.PENDINGPOSTS).doc(postDocId);
-    await pendingPostRef.set({ [FIELD.DATE]: new Date() });
-  }
+  return result;
 }
 
 export async function setDataForSendingPostToUser({
@@ -153,13 +148,35 @@ export async function setDataForSendingPostToUser({
   const pendNewPostData = {
     [FIELD.DATE]: receivedDate /* , [FIELD.USER_DOC_ID]: selectedUserId */,
   };
-  const postDocData = { [FIELD.CURRENT_RECEIVED_USER_DOC_ID]: selectedUserId };
+  const postDocData = {
+    [FIELD.CURRENT_RECEIVED_USER_DOC_ID]: selectedUserId,
+    [FIELD.IS_READING]: false,
+  };
 
   const newPostPromise = newPostRef.set(newPostData);
   const pendingNewPostsPromise = pendingNewPostRef.set(pendNewPostData);
   const postPromise = postRef.update(postDocData);
 
   return Promise.all([newPostPromise, pendingNewPostsPromise, postPromise]);
+}
+
+async function setDataForSendingToPending({
+  postDocId,
+}: {
+  postDocId: string;
+}): Promise<[admin.firestore.WriteResult, admin.firestore.WriteResult]> {
+  log.debug(`not found send user id / insert pending collection`);
+  const pendingPostRef = firestore.collection(COLLECTION.PENDINGPOSTS).doc(postDocId);
+  const postRef = firestore.collection(COLLECTION.POSTS).doc(postDocId);
+
+  const pendingPostPromise = pendingPostRef.set({ [FIELD.DATE]: new Date() });
+
+  const postPromise = postRef.update({
+    [FIELD.CURRENT_RECEIVED_USER_DOC_ID]: null,
+    [FIELD.IS_READING]: false,
+  });
+
+  return Promise.all([pendingPostPromise, postPromise]);
 }
 
 async function sendPostByQuery(
@@ -213,6 +230,8 @@ async function sendPostByQuery(
 
     // send notification
     sendNewPostArrivedMessage(selectedUserId, postDocId, receivedDate);
+  } else {
+    await setDataForSendingToPending({ postDocId });
   }
 
   return selectedUserId != null;
