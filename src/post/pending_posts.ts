@@ -7,16 +7,17 @@ const log = functions.logger;
 const firestore = admin.firestore();
 
 export async function handlePendingPosts() {
-// isUsingExtra: boolean,
-// searchFlag: boolean,
-// postDocId: string,
+  // isUsingExtra: boolean,
+  // searchFlag: boolean,
+  // postDocId: string,
   log.debug(`start pend posts process`);
   const pendingPostsRef = firestore.collection(COLLECTION.PENDINGPOSTS);
 
-  const pendPostsSnapshot = await pendingPostsRef.orderBy(FIELD.CREATED_DATE).get();
+  const pendPostsSnapshot = await pendingPostsRef.orderBy(FIELD.DATE).get();
 
   for (const doc of pendPostsSnapshot.docs) {
     const p_postDocId = doc.id;
+    log.debug;
 
     const p_result = await sendPostToUser({ postDocId: p_postDocId });
 
