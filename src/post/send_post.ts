@@ -8,20 +8,16 @@ const log = functions.logger;
 const firestore = admin.firestore();
 interface sendPostToUserArgsType {
   postDocId: string;
-  // userDocId?: string;
+  createStoryUserDocId?: string;
 }
 
 export default async function sendPostToUser({
   postDocId,
+  createStoryUserDocId,
 }: // userDocId: sendUserDocId,
 // userDocId: sendUserDocId,
 sendPostToUserArgsType) {
   log.debug(`[${postDocId}] start send post`);
-
-  // 보내기 전에 new Posts doc들을 지운다
-  // if (sendUserDocId) {
-  //   await deleteNewPostInUserAndPendingNewPost(sendUserDocId, postDocId);
-  // }
 
   // 1. get globalVariables/systemPost
   const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
@@ -29,7 +25,7 @@ sendPostToUserArgsType) {
   let isUsingExtra = false;
   let searchFlag = false;
 
-  let isProcessPendingPost = false;
+  // let isProcessPendingPost = false;
 
   // 2. reserve extra flag, check receivable count
   await firestore.runTransaction(async (transaction) => {
@@ -58,64 +54,19 @@ sendPostToUserArgsType) {
         [FIELD.RECEIVABLE_COUNT]: 0,
       });
 
-      isProcessPendingPost = true;
+      // isProcessPendingPost = true;
     } else {
       transaction.update(sendPostRef, { [FIELD.IS_USING_EXTRA]: !isUsingExtra });
     }
   });
 
   // 3. process pending posts
-  if (isProcessPendingPost) {
-    log.debug(`start pend posts process`);
-    const pendingPostsRef = firestore.collection(COLLECTION.PENDINGPOSTS);
-
-    const pendPostsSnapshot = await pendingPostsRef.orderBy(FIELD.CREATED_DATE).get();
-
-    for (const doc of pendPostsSnapshot.docs) {
-      const p_postDocId = doc.id;
-
-      const p_result = await sendPostByQuery(p_postDocId, isUsingExtra, searchFlag);
-
-      if (p_result) {
-        log.debug(`pending posts[${p_postDocId}] delete`);
-        /* await */ doc.ref.delete();
-        isUsingExtra = !isUsingExtra;
-      }
-    }
-
-    log.debug(`end pend posts process`);
-
-    await firestore.runTransaction(async (transaction) => {
-      const sendPostDocument = await transaction.get(sendPostRef);
-
-      const sendPostData = sendPostDocument.data()!;
-
-      searchFlag = sendPostData[FIELD.SEARCH_FLAG];
-
-      const totalReceivableCount = sendPostData[FIELD.TOTAL_RECEIVABLE];
-      const receivableCount = sendPostData[FIELD.RECEIVABLE_COUNT];
-
-      log.debug(
-        `[${postDocId}] after precessing pending post / get send post, searchFlag : ${searchFlag}, receivableCount: ${receivableCount}, totalReceivableCount: ${totalReceivableCount}`,
-      );
-      if (totalReceivableCount <= receivableCount) {
-        // reset count, reverse flag
-        searchFlag = !searchFlag;
-
-        log.debug(
-          `[${postDocId}] after precessing pending post / reverse searchFlag : ${searchFlag} / reset receivableCount`,
-        );
-
-        transaction.update(sendPostRef, {
-          [FIELD.SEARCH_FLAG]: searchFlag,
-          [FIELD.RECEIVABLE_COUNT]: 0,
-        });
-      }
-    });
-  }
+  // if (isProcessPendingPost) {
+  //   ({ isUsingExtra, searchFlag } = await handlePendingPosts(isUsingExtra, searchFlag, postDocId));
+  // }
 
   // 4. send post to selected user by query
-  const result = await sendPostByQuery(postDocId, isUsingExtra, searchFlag);
+  const result = await sendPostByQuery(postDocId, isUsingExtra, searchFlag, createStoryUserDocId);
 
   return result;
 }
@@ -173,10 +124,11 @@ async function setDataForSendingToPending({
   return Promise.all([pendingPostPromise]);
 }
 
-async function sendPostByQuery(
+export async function sendPostByQuery(
   postDocId: string,
   isUsingExtra: boolean,
   searchFlag: boolean,
+  createStoryUserDocId?: string,
 ): Promise<boolean> {
   let rejectionIds: string[] = await getRejectionIdsByQueryToPosts(postDocId);
   let linkedIds: string[] = await getLinkedIdsByQueryToPosts(postDocId);
@@ -214,6 +166,10 @@ async function sendPostByQuery(
     }
   }
 
+  if (selectedUserId == null && createStoryUserDocId != undefined) {
+    selectedUserId = await getSelectedIdByCreation(createStoryUserDocId, selectedUserId, postDocId);
+  }
+
   if (selectedUserId != null) {
     log.debug(`send post[${postDocId}] to selected user:  ${selectedUserId}`);
 
@@ -229,6 +185,25 @@ async function sendPostByQuery(
   }
 
   return selectedUserId != null;
+}
+
+async function getSelectedIdByCreation(
+  createStoryUserDocId: string,
+  selectedUserId: any,
+  postDocId: string,
+) {
+  const selectUserDoc = await qeuryToReceivableUsersByCreation(createStoryUserDocId);
+  if (selectUserDoc) selectedUserId = selectUserDoc.id;
+  if (selectedUserId != null) {
+    log.debug(
+      `[${postDocId}] search fail normal method / first send story, then pick user without search flag / select user id: <${selectedUserId}>`,
+    );
+  } else {
+    log.error(
+      `[${postDocId}] even if call first send search method / not found selected user / something wrong`,
+    );
+  }
+  return selectedUserId;
 }
 
 async function getRejectionIdsByQueryToPosts(postDocId: string): Promise<string[]> {
@@ -332,6 +307,51 @@ async function getSelectedIdByQueryToReceivableUsers({
   }
 
   return selectedUserId;
+}
+
+async function qeuryToReceivableUsersByCreation(
+  createStoryUserDocId: string,
+): Promise<admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData> | null> {
+  log.debug(`search in receivable users collection by first send`);
+  const receivableUsersCollectionRef = firestore.collection(COLLECTION.RECEIVABLEUSERS);
+
+  const randomKey = receivableUsersCollectionRef.doc().id;
+  log.debug(`generated search key : ${randomKey} / first send`);
+
+  const gteQuerySnapshot = await receivableUsersCollectionRef
+    .where(admin.firestore.FieldPath.documentId(), '!=', createStoryUserDocId)
+    .where(admin.firestore.FieldPath.documentId(), '>=', randomKey)
+    .limit(1)
+    .get();
+
+  log.debug(`receivable user search gte size : ${gteQuerySnapshot.size} / first send`);
+
+  let selectedDoc = null;
+
+  if (gteQuerySnapshot.size > 0) {
+    gteQuerySnapshot.forEach((doc) => {
+      selectedDoc = doc;
+    });
+  } else {
+    const ltQuerySnapshot = await receivableUsersCollectionRef
+      .where(admin.firestore.FieldPath.documentId(), '!=', createStoryUserDocId)
+      .where(admin.firestore.FieldPath.documentId(), '<', randomKey)
+      .limit(1)
+      .get();
+
+    log.debug(`receivable user search lt size : ${ltQuerySnapshot.size} / first send`);
+    if (ltQuerySnapshot.size > 0) {
+      ltQuerySnapshot.forEach((doc) => {
+        selectedDoc = doc;
+      });
+    }
+  }
+
+  log.debug(
+    `end queryToReceivableUsers method / selectedDoc is null : ${selectedDoc == null} / first send`,
+  );
+
+  return selectedDoc;
 }
 
 async function queryToReceivableUsers({

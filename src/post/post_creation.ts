@@ -80,7 +80,7 @@ export const onCreatePostTrigger = functions
     //   setTimeout(resolve, 1000);
     // });
 
-    await sendPostToUser({ postDocId });
+    await sendPostToUser({ postDocId, createStoryUserDocId: userDocId });
 
     // batchResultList.forEach((element) => {
     //   if (element.writeTime) log.debug(`write time : ${element.writeTime.toDate()}`);

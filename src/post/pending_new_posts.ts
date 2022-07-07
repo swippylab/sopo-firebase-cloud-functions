@@ -3,6 +3,7 @@ import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
 import { deleteNewPostInUserAndPendingNewPost, validateRejectionPost } from './new_posts';
+import { handlePendingPosts } from './pending_posts';
 import sendPostToUser from './send_post';
 
 const maxWaitHour = 4;
@@ -17,6 +18,7 @@ export const onShceduledHandlePendingNewPosts = functions.pubsub
   // .schedule(`* * * * *`)
   .onRun(async (/* context */) => {
     await handlePendingNewPosts();
+    await handlePendingPosts();
   });
 
 export async function handlePendingNewPosts() {
