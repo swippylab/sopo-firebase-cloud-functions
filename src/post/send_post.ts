@@ -9,11 +9,13 @@ const _firestore = admin.firestore();
 interface sendPostToUserArgsType {
   postDocId: string;
   createStoryUserDocId?: string;
+  isPendingPost?: boolean;
 }
 
 export default async function sendPostToUser({
   postDocId,
   createStoryUserDocId,
+  isPendingPost = false,
 }: // userDocId: sendUserDocId,
 // userDocId: sendUserDocId,
 sendPostToUserArgsType) {
@@ -66,7 +68,13 @@ sendPostToUserArgsType) {
   // }
 
   // 4. send post to selected user by query
-  const result = await sendPostByQuery(postDocId, isUsingExtra, searchFlag, createStoryUserDocId);
+  const result = await sendPostByQuery(
+    postDocId,
+    isUsingExtra,
+    searchFlag,
+    createStoryUserDocId,
+    isPendingPost,
+  );
 
   return result;
 }
@@ -116,7 +124,6 @@ async function setDataForSendingToPending({
 }: {
   postDocId: string;
 }): Promise<[admin.firestore.WriteResult]> {
-  log.debug(`[${postDocId}] not found send user id / insert pending collection`);
   const pendingPostRef = _firestore.collection(COLLECTION.PENDINGPOSTS).doc(postDocId);
 
   const pendingPostPromise = pendingPostRef.set({ [FIELD.DATE]: new Date() });
@@ -129,6 +136,7 @@ export async function sendPostByQuery(
   isUsingExtra: boolean,
   searchFlag: boolean,
   createStoryUserDocId?: string,
+  isPendingPost: boolean = false,
 ): Promise<boolean> {
   let rejectionIds: string[] = await getRejectionIdsByQueryToPosts(postDocId);
   let linkedIds: string[] = await getLinkedIdsByQueryToPosts(postDocId);
@@ -181,7 +189,12 @@ export async function sendPostByQuery(
     // send notification
     sendNewPostArrivedMessage(selectedUserId, postDocId, receivedDate);
   } else {
-    await setDataForSendingToPending({ postDocId });
+    if (!isPendingPost) {
+      log.debug(`[${postDocId}] not found send user id / insert pending collection`);
+      await setDataForSendingToPending({ postDocId });
+    } else {
+      log.debug(`[${postDocId}] not found send user id / keep pending collection`);
+    }
   }
 
   return selectedUserId != null;

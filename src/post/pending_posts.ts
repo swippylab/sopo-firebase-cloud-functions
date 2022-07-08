@@ -25,7 +25,7 @@ export async function handlePendingPosts() {
     const p_postDocId = doc.id;
     log.debug;
 
-    const p_result = await sendPostToUser({ postDocId: p_postDocId });
+    const p_result = await sendPostToUser({ postDocId: p_postDocId, isPendingPost: true });
 
     if (p_result) {
       log.debug(`pending posts[${p_postDocId}] delete`);
