@@ -5,7 +5,7 @@ import { DOCUMENT } from '../constant/document';
 import { FIELD } from '../constant/field';
 import sendNewPostArrivedMessage from '../message/new_post_arrived';
 const log = functions.logger;
-const firestore = admin.firestore();
+const _firestore = admin.firestore();
 interface sendPostToUserArgsType {
   postDocId: string;
   createStoryUserDocId?: string;
@@ -20,7 +20,7 @@ sendPostToUserArgsType) {
   log.debug(`[${postDocId}] start send post`);
 
   // 1. get globalVariables/systemPost
-  const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
+  const sendPostRef = _firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
 
   let isUsingExtra = false;
   let searchFlag = false;
@@ -28,7 +28,7 @@ sendPostToUserArgsType) {
   // let isProcessPendingPost = false;
 
   // 2. reserve extra flag, check receivable count
-  await firestore.runTransaction(async (transaction) => {
+  await _firestore.runTransaction(async (transaction) => {
     const sendPostDocument = await transaction.get(sendPostRef);
 
     const sendPostData = sendPostDocument.data()!;
@@ -83,17 +83,17 @@ export async function setDataForSendingPostToUser({
   [admin.firestore.WriteResult, admin.firestore.WriteResult, admin.firestore.WriteResult]
 > {
   // user new posts
-  const newPostRef = firestore
+  const newPostRef = _firestore
     .collection(COLLECTION.USERS)
     .doc(selectedUserId)
     .collection(COLLECTION.NEWPOSTS)
     .doc(postDocId);
 
   // pending new posts
-  const pendingNewPostRef = firestore.collection(COLLECTION.PEDINGNEWPOSTS).doc(postDocId);
+  const pendingNewPostRef = _firestore.collection(COLLECTION.PEDINGNEWPOSTS).doc(postDocId);
 
   // post doc ref
-  const postRef = firestore.collection(COLLECTION.POSTS).doc(postDocId);
+  const postRef = _firestore.collection(COLLECTION.POSTS).doc(postDocId);
 
   const newPostData = { [FIELD.DATE]: receivedDate, [FIELD.IS_ACCEPTED]: null };
   const pendNewPostData = {
@@ -117,7 +117,7 @@ async function setDataForSendingToPending({
   postDocId: string;
 }): Promise<[admin.firestore.WriteResult]> {
   log.debug(`[${postDocId}] not found send user id / insert pending collection`);
-  const pendingPostRef = firestore.collection(COLLECTION.PENDINGPOSTS).doc(postDocId);
+  const pendingPostRef = _firestore.collection(COLLECTION.PENDINGPOSTS).doc(postDocId);
 
   const pendingPostPromise = pendingPostRef.set({ [FIELD.DATE]: new Date() });
 
@@ -207,7 +207,7 @@ async function getSelectedIdByCreation(
 }
 
 async function getRejectionIdsByQueryToPosts(postDocId: string): Promise<string[]> {
-  const postRejectionsRef = firestore
+  const postRejectionsRef = _firestore
     .collection(COLLECTION.POSTS)
     .doc(postDocId)
     .collection(COLLECTION.REJECTIONS);
@@ -223,7 +223,7 @@ async function getRejectionIdsByQueryToPosts(postDocId: string): Promise<string[
 }
 
 async function getLinkedIdsByQueryToPosts(postDocId: string): Promise<string[]> {
-  const postlinksRef = firestore
+  const postlinksRef = _firestore
     .collection(COLLECTION.POSTS)
     .doc(postDocId)
     .collection(COLLECTION.LINKS);
@@ -259,7 +259,27 @@ async function getSelectedIdByQueryToExtraReceivableUsers({
     selectedUserId = selectedDoc.get(FIELD.USER_DOC_ID);
 
     // delete selected doc
-    await selectedDoc.ref.delete();
+    // await selectedDoc.ref.delete();
+
+    const extraReceivableUserRef = _firestore
+      .collection(COLLECTION.EXTRARECEIVABLEUSERS)
+      .doc(selectedUserId);
+
+    await _firestore.runTransaction(async (transaction) => {
+      const extraReceivableUserDoc = await transaction.get(extraReceivableUserRef);
+
+      const writeCount = extraReceivableUserDoc.get(FIELD.WRITECOUNT);
+      const reduceCount = writeCount - 1;
+      if (reduceCount <= 0) {
+        transaction.delete(extraReceivableUserRef);
+      } else {
+        const extraReceivableData = {
+          [FIELD.WRITECOUNT]: reduceCount,
+        };
+
+        transaction.update(extraReceivableUserRef, extraReceivableData);
+      }
+    });
 
     log.debug(`<${selectedUserId}> selected User in Extra Receivable users`);
   }
@@ -285,11 +305,11 @@ async function getSelectedIdByQueryToReceivableUsers({
     selectedUserId = selectedDoc?.id!;
 
     // up receivableCount in globalVariables
-    const sendPostRef = firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
+    const sendPostRef = _firestore.collection(COLLECTION.GLOBALVARIABLES).doc(DOCUMENT.SENDPOST);
 
-    const receivableUserRef = firestore.collection(COLLECTION.RECEIVABLEUSERS).doc(selectedUserId);
+    const receivableUserRef = _firestore.collection(COLLECTION.RECEIVABLEUSERS).doc(selectedUserId);
 
-    await firestore.runTransaction(async (transaction) => {
+    await _firestore.runTransaction(async (transaction) => {
       const sendPostDocument = await transaction.get(sendPostRef);
 
       const receivableCount = sendPostDocument.get(FIELD.RECEIVABLE_COUNT);
@@ -313,7 +333,7 @@ async function qeuryToReceivableUsersByCreation(
   createStoryUserDocId: string,
 ): Promise<admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData> | null> {
   log.debug(`search in receivable users collection by first send`);
-  const receivableUsersCollectionRef = firestore.collection(COLLECTION.RECEIVABLEUSERS);
+  const receivableUsersCollectionRef = _firestore.collection(COLLECTION.RECEIVABLEUSERS);
 
   const randomKey = receivableUsersCollectionRef.doc().id;
   log.debug(`generated search key : ${randomKey} / first send`);
@@ -360,7 +380,7 @@ async function queryToReceivableUsers({
   linkedIds,
 }: selectedIdQueryArguments): Promise<admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData> | null> {
   log.debug(`search in receivable users collection`);
-  const receivableUsersCollectionRef = firestore.collection(COLLECTION.RECEIVABLEUSERS);
+  const receivableUsersCollectionRef = _firestore.collection(COLLECTION.RECEIVABLEUSERS);
 
   const randomKey = receivableUsersCollectionRef.doc().id;
   log.debug(`generated search key : ${randomKey} / searchFlag : ${searchFlag}`);
@@ -407,67 +427,80 @@ async function queryToExtraReceivableUsers({
   rejectionIds,
   linkedIds,
 }: selectedIdQueryArguments): Promise<admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData> | null> {
-  const extraReceivableUsersCollectionRef = firestore.collection(COLLECTION.EXTRARECEIVABLEUSERS);
+  const extraReceivableUsersCollectionRef = _firestore.collection(COLLECTION.EXTRARECEIVABLEUSERS);
 
   log.debug(`search extra receivable users collection`);
   let selectedDoc = null;
-  const maxCount = 10;
-  let tryCount = 1;
-  while (selectedDoc == null) {
-    log.debug(`[${tryCount}] search try`);
+  // const maxCount = 10;
+  // let tryCount = 1;
 
-    const randomKey = extraReceivableUsersCollectionRef.doc().id;
+  // let isExtraEmpty: boolean = false;
 
-    const gteQuerySnapshot = await extraReceivableUsersCollectionRef
-      .where(admin.firestore.FieldPath.documentId(), '>=', randomKey)
+  // while (selectedDoc == null && !isExtraEmpty) {
+  // log.debug(`[${tryCount}] search try`);
+
+  const randomKey = extraReceivableUsersCollectionRef.doc().id;
+
+  const excludingIds = [...rejectionIds, ...linkedIds];
+
+  const gteQuerySnapshot = await extraReceivableUsersCollectionRef
+    .where(admin.firestore.FieldPath.documentId(), 'not-in', excludingIds)
+    .where(admin.firestore.FieldPath.documentId(), '>=', randomKey)
+    // .orderBy(FIELD.WR)
+    .limit(1)
+    .get();
+
+  log.debug(`extra receivable user search gte size : ${gteQuerySnapshot.size}`);
+
+  if (gteQuerySnapshot.size > 0) {
+    gteQuerySnapshot.forEach((doc) => {
+      // selectedDoc = validateResultFromQueryToExtra(doc, rejectionIds, linkedIds);
+      selectedDoc = doc;
+    });
+  } else {
+    const ltQuerySnapshot = await extraReceivableUsersCollectionRef
+      .where(admin.firestore.FieldPath.documentId(), 'not-in', excludingIds)
+      .where(admin.firestore.FieldPath.documentId(), '<', randomKey)
       .limit(1)
       .get();
 
-    log.debug(`extra receivable user search gte size : ${gteQuerySnapshot.size}`);
+    log.debug(`extra receivable user search lt size : ${ltQuerySnapshot.size}`);
 
-    if (gteQuerySnapshot.size > 0) {
-      gteQuerySnapshot.forEach((doc) => {
-        selectedDoc = validateResultFromQueryToExtra(doc, rejectionIds, linkedIds);
+    if (ltQuerySnapshot.size > 0) {
+      ltQuerySnapshot.forEach((doc) => {
+        // selectedDoc = validateResultFromQueryToExtra(doc, rejectionIds, linkedIds);
+        selectedDoc = doc;
       });
-    } else {
-      const ltQuerySnapshot = await extraReceivableUsersCollectionRef
-        .where(admin.firestore.FieldPath.documentId(), '<', randomKey)
-        .limit(1)
-        .get();
-
-      log.debug(`extra receivable user search lt size : ${ltQuerySnapshot.size}`);
-
-      if (ltQuerySnapshot.size > 0) {
-        ltQuerySnapshot.forEach((doc) => {
-          selectedDoc = validateResultFromQueryToExtra(doc, rejectionIds, linkedIds);
-        });
-      }
-    }
-
-    if (selectedDoc == null && tryCount++ >= maxCount) {
-      log.debug(
-        `No documents were found that do not match the send user doc id. Escape by reaching max count`,
-      );
-      break;
     }
   }
+
+  // if (selectedDoc == null && tryCount++ >= maxCount) {
+  //   log.debug(
+  //     `No documents were found that do not match the send user doc id. Escape by reaching max count`,
+  //   );
+  //   break;
+  // }
+
+  // if (isExtraEmpty) {
+  //   log.debug(`extra receivable is empty`);
+  // }
 
   return selectedDoc;
 }
 
-async function validateResultFromQueryToExtra(
-  doc: FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>,
-  rejectionIds: string[],
-  linkedIds: string[],
-): Promise<admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData> | null> {
-  const queryResultDocId = doc.get(FIELD.USER_DOC_ID);
-  log.debug(`validatioin search extra result id : ${queryResultDocId}`);
-  if (rejectionIds.includes(queryResultDocId)) {
-    log.debug(`query result id is included in rejection ids : ${queryResultDocId}`);
-  } else if (linkedIds.includes(queryResultDocId)) {
-    log.debug(`query result id is included in linked ids : ${queryResultDocId}`);
-  } else {
-    return doc;
-  }
-  return null;
-}
+// async function validateResultFromQueryToExtra(
+//   doc: FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>,
+//   rejectionIds: string[],
+//   linkedIds: string[],
+// ): Promise<admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData> | null> {
+//   const queryResultDocId = doc.get(FIELD.USER_DOC_ID);
+//   log.debug(`validatioin search extra result id : ${queryResultDocId}`);
+//   if (rejectionIds.includes(queryResultDocId)) {
+//     log.debug(`query result id is included in rejection ids : ${queryResultDocId}`);
+//   } else if (linkedIds.includes(queryResultDocId)) {
+//     log.debug(`query result id is included in linked ids : ${queryResultDocId}`);
+//   } else {
+//     return doc;
+//   }
+//   return null;
+// }

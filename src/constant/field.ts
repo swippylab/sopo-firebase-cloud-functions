@@ -19,4 +19,5 @@ export const FIELD = {
   CURRENT_RECEIVED_USER_DOC_ID: 'currentReceivedUserDocId',
   IS_READING: 'isReading',
   SYSTEM_LANGUAGE: 'systemLanguage',
+  WRITECOUNT: 'writeCount',
 };

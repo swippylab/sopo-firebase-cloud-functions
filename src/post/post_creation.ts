@@ -63,14 +63,31 @@ export const onCreatePostTrigger = functions
     const linksPromise = postLinkRef.set(postLinkData);
 
     // extra receivable users collection
-    const extraReceivableUserRef = _firestore.collection(COLLECTION.EXTRARECEIVABLEUSERS).doc();
+    const extraReceivableUserRef = _firestore
+      .collection(COLLECTION.EXTRARECEIVABLEUSERS)
+      .doc(userDocId);
 
-    const extraReceivableData = {
-      [FIELD.USER_DOC_ID]: userDocId,
-      [FIELD.CREATED_DATE]: linkedDate,
-    };
+    const extraPromise = _firestore.runTransaction(async (transaction) => {
+      const extraReceivableUserDoc = await transaction.get(extraReceivableUserRef);
 
-    const extraPromise = extraReceivableUserRef.set(extraReceivableData);
+      if (extraReceivableUserDoc.exists) {
+        const writeCount = extraReceivableUserDoc.get(FIELD.WRITECOUNT);
+
+        const extraReceivableData = {
+          [FIELD.WRITECOUNT]: writeCount + 1,
+        };
+
+        transaction.update(extraReceivableUserRef, extraReceivableData);
+      } else {
+        const extraReceivableData = {
+          // [FIELD.USER_DOC_ID]: userDocId,
+          // [FIELD.CREATED_DATE]: linkedDate,
+          [FIELD.WRITECOUNT]: 1,
+        };
+
+        transaction.set(extraReceivableUserRef, extraReceivableData);
+      }
+    });
 
     await Promise.all([allPromise, myPromise, linksPromise, extraPromise]);
 

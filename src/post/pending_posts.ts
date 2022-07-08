@@ -2,6 +2,7 @@ import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
+import { SCHEDULED_FUNCTION_QUERY_LIMIT } from '../constant/limit';
 import sendPostToUser from './send_post';
 const log = functions.logger;
 const firestore = admin.firestore();
@@ -13,7 +14,12 @@ export async function handlePendingPosts() {
   log.debug(`start pend posts process`);
   const pendingPostsRef = firestore.collection(COLLECTION.PENDINGPOSTS);
 
-  const pendPostsSnapshot = await pendingPostsRef.orderBy(FIELD.DATE).get();
+  const pendPostsSnapshot = await pendingPostsRef
+    .orderBy(FIELD.DATE)
+    .limit(SCHEDULED_FUNCTION_QUERY_LIMIT)
+    .get();
+
+  log.debug(`query pending posts size : ${pendPostsSnapshot.size}`);
 
   for (const doc of pendPostsSnapshot.docs) {
     const p_postDocId = doc.id;

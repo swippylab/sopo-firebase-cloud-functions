@@ -2,6 +2,7 @@ import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
+import { SCHEDULED_FUNCTION_QUERY_LIMIT } from '../constant/limit';
 import { deleteNewPostInUserAndPendingNewPost, validateRejectionPost } from './new_posts';
 import { handlePendingPosts } from './pending_posts';
 import sendPostToUser from './send_post';
@@ -33,7 +34,12 @@ export async function handlePendingNewPosts() {
 
   log.debug(`search limit time : ${searchLimitDate.toString()}`);
 
-  const querySnapshot = await pendNewPostsRef.where(FIELD.DATE, '<=', searchLimitDate).get();
+  const querySnapshot = await pendNewPostsRef
+    .where(FIELD.DATE, '<=', searchLimitDate)
+    .limit(SCHEDULED_FUNCTION_QUERY_LIMIT)
+    .get();
+
+  log.debug(`query pending new posts size : ${querySnapshot.size}`);
 
   for (const doc of querySnapshot.docs) {
     const postDocId = doc.id;
