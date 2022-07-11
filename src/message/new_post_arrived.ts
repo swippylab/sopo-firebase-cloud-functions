@@ -5,8 +5,8 @@ import { FIELD } from '../constant/field';
 import Language from '../model/language';
 
 const title = {
-  [Language.korean.toString()]: '새로운 포스트가 도착했습니다',
-  [Language.english.toString()]: 'You have received a new post',
+  [Language.korean.toString()]: '새로운 스토리가 도착했어요',
+  [Language.english.toString()]: 'You have received a new story',
 };
 
 const _firestore = admin.firestore();
