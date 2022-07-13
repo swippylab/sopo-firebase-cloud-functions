@@ -15,4 +15,5 @@ export const COLLECTION = {
   GLOBALVARIABLES: 'globalVariables',
   PENDINGPOSTS: 'pendingPosts',
   PEDINGNEWPOSTS: 'pendingNewPosts',
+  BLOCKEDUSERS: 'blockedUsers',
 };

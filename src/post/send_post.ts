@@ -140,6 +140,7 @@ export async function sendPostByQuery(
 ): Promise<boolean> {
   let rejectionIds: string[] = await getRejectionIdsByQueryToPosts(postDocId);
   let linkedIds: string[] = await getLinkedIdsByQueryToPosts(postDocId);
+  let blockedIds: string[] = await getBlockedIdxByQuery(postDocId);
 
   let selectedUserId = null;
   if (!isUsingExtra) {
@@ -148,6 +149,7 @@ export async function sendPostByQuery(
       searchFlag,
       rejectionIds,
       linkedIds,
+      blockedIds,
     });
 
     if (selectedUserId == null) {
@@ -155,6 +157,7 @@ export async function sendPostByQuery(
       selectedUserId = await getSelectedIdByQueryToExtraReceivableUsers({
         rejectionIds,
         linkedIds,
+        blockedIds,
       });
     }
   } else {
@@ -162,6 +165,7 @@ export async function sendPostByQuery(
     selectedUserId = await getSelectedIdByQueryToExtraReceivableUsers({
       rejectionIds,
       linkedIds,
+      blockedIds,
     });
 
     if (selectedUserId == null) {
@@ -170,6 +174,7 @@ export async function sendPostByQuery(
         searchFlag,
         rejectionIds,
         linkedIds,
+        blockedIds,
       });
     }
   }
@@ -253,18 +258,40 @@ async function getLinkedIdsByQueryToPosts(postDocId: string): Promise<string[]> 
   return linkedIds;
 }
 
+async function getBlockedIdxByQuery(postDocId: string): Promise<string[]> {
+  const postRef = await _firestore.collection(COLLECTION.POSTS).doc(postDocId).get();
+
+  const createPostUserDocId: string = postRef.get(FIELD.USER_DOC_ID);
+
+  const blockUsersRef = await _firestore
+    .collection(COLLECTION.USERS)
+    .doc(createPostUserDocId)
+    .collection(COLLECTION.BLOCKEDUSERS)
+    .get();
+
+  let blockedIds: string[] = [];
+
+  blockUsersRef.forEach((doc) => {
+    blockedIds.push(doc.id);
+  });
+
+  return blockedIds;
+}
+
 interface selectedIdQueryArguments {
   searchFlag?: boolean;
   rejectionIds: string[];
   linkedIds: string[];
+  blockedIds: string[];
 }
 
 async function getSelectedIdByQueryToExtraReceivableUsers({
   rejectionIds,
   linkedIds,
+  blockedIds,
 }: selectedIdQueryArguments) {
   // query to extra
-  let selectedDoc = await queryToExtraReceivableUsers({ rejectionIds, linkedIds });
+  let selectedDoc = await queryToExtraReceivableUsers({ rejectionIds, linkedIds, blockedIds });
 
   let selectedUserId = null;
 
@@ -304,12 +331,14 @@ async function getSelectedIdByQueryToReceivableUsers({
   searchFlag,
   rejectionIds,
   linkedIds,
+  blockedIds,
 }: selectedIdQueryArguments) {
   // query
   let selectedDoc = await queryToReceivableUsers({
     searchFlag,
     rejectionIds,
     linkedIds,
+    blockedIds,
   });
 
   let selectedUserId: string | null = null;
@@ -391,6 +420,7 @@ async function queryToReceivableUsers({
   searchFlag,
   rejectionIds,
   linkedIds,
+  blockedIds,
 }: selectedIdQueryArguments): Promise<admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData> | null> {
   log.debug(`search in receivable users collection`);
   const receivableUsersCollectionRef = _firestore.collection(COLLECTION.RECEIVABLEUSERS);
@@ -398,7 +428,7 @@ async function queryToReceivableUsers({
   const randomKey = receivableUsersCollectionRef.doc().id;
   log.debug(`generated search key : ${randomKey} / searchFlag : ${searchFlag}`);
 
-  const excludingIds = [...rejectionIds, ...linkedIds];
+  const excludingIds = [...rejectionIds, ...linkedIds, ...blockedIds];
 
   const gteQuerySnapshot = await receivableUsersCollectionRef
     .where(admin.firestore.FieldPath.documentId(), 'not-in', excludingIds)
@@ -439,6 +469,7 @@ async function queryToReceivableUsers({
 async function queryToExtraReceivableUsers({
   rejectionIds,
   linkedIds,
+  blockedIds,
 }: selectedIdQueryArguments): Promise<admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData> | null> {
   const extraReceivableUsersCollectionRef = _firestore.collection(COLLECTION.EXTRARECEIVABLEUSERS);
 
@@ -454,7 +485,7 @@ async function queryToExtraReceivableUsers({
 
   const randomKey = extraReceivableUsersCollectionRef.doc().id;
 
-  const excludingIds = [...rejectionIds, ...linkedIds];
+  const excludingIds = [...rejectionIds, ...linkedIds, ...blockedIds];
 
   const gteQuerySnapshot = await extraReceivableUsersCollectionRef
     .where(admin.firestore.FieldPath.documentId(), 'not-in', excludingIds)
