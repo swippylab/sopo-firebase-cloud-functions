@@ -74,15 +74,22 @@ export const newPostHandleUpdateTrigger = functions
       // links collection create trigger
       // get post document with post id
       const postDocRef = _firestore.collection(COLLECTION.POSTS).doc(postDocId);
+      const postLinkCollectionRef = _firestore
+        .collection(COLLECTION.POSTS)
+        .doc(postDocId)
+        .collection(COLLECTION.LINKS);
 
       await _firestore.runTransaction(async (transaction) => {
         const postDoc = await transaction.get(postDocRef);
+        const postLinksCollection = await transaction.get(postLinkCollectionRef);
+
         if (!postDoc.exists) {
           throw `${COLLECTION.POSTS}/${postDocId}} does not exist`;
         }
         const linkedCount = postDoc.get(FIELD.LINKED_COUNT);
 
-        const updateLinkedCount = linkedCount + 1;
+        // const updateLinkedCount = linkedCount + 1;
+        const updateLinkedCount = postLinksCollection.size;
 
         log.debug(`[${postDocId}] update linked count : ${linkedCount} -> ${updateLinkedCount}`);
 
