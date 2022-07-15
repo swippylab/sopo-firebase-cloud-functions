@@ -296,7 +296,7 @@ async function getSelectedIdByQueryToExtraReceivableUsers({
   let selectedUserId = null;
 
   if (selectedDoc != null) {
-    selectedUserId = selectedDoc.get(FIELD.USER_DOC_ID);
+    selectedUserId = selectedDoc.id;
 
     // delete selected doc
     // await selectedDoc.ref.delete();

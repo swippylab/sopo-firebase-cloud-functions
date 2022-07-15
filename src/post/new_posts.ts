@@ -70,7 +70,6 @@ export const newPostHandleUpdateTrigger = functions
       log.debug(`[${postDocId}] new Posts trigger batch commit(sync)`);
 
       // updateLinkCountAndPreviewLinkedId({ postDocId /* , userDocId */ });
-      log.debug(`[${postDocId}] update linked count`);
 
       // links collection create trigger
       // get post document with post id
@@ -84,6 +83,8 @@ export const newPostHandleUpdateTrigger = functions
         const linkedCount = postDoc.get(FIELD.LINKED_COUNT);
 
         const updateLinkedCount = linkedCount + 1;
+
+        log.debug(`[${postDocId}] update linked count : ${linkedCount} -> ${updateLinkedCount}`);
 
         // update post Document / field linkedCount
         transaction.update(postDocRef, {
