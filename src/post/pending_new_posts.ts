@@ -7,7 +7,7 @@ import { deleteNewPostInUserAndPendingNewPost, validateRejectionPost } from './n
 import { handlePendingPosts } from './pending_posts';
 import sendPostToUser from './send_post';
 
-const maxWaitHour = 4;
+const maxWaitHour = 12;
 const executionDelayHour = 2;
 
 const log = functions.logger;
