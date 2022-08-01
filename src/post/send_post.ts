@@ -428,38 +428,69 @@ async function queryToReceivableUsers({
   const randomKey = receivableUsersCollectionRef.doc().id;
   log.debug(`generated search key : ${randomKey} / searchFlag : ${searchFlag}`);
 
-  const excludingIds = [...rejectionIds, ...linkedIds, ...blockedIds];
+  // const excludingIds = [...rejectionIds, ...linkedIds, ...blockedIds];
+  const excludingIds = new Set([...rejectionIds, ...linkedIds, ...blockedIds]);
 
-  const gteQuerySnapshot = await receivableUsersCollectionRef
-    .where(admin.firestore.FieldPath.documentId(), 'not-in', excludingIds)
+  const querySnapshot = await receivableUsersCollectionRef
     .where(FIELD.SEARCH_FLAG, '==', searchFlag)
-    .where(admin.firestore.FieldPath.documentId(), '>=', randomKey)
-    .limit(1)
     .get();
-
-  log.debug(`receivable user search gte size : ${gteQuerySnapshot.size}`);
 
   let selectedDoc = null;
 
-  if (gteQuerySnapshot.size > 0) {
-    gteQuerySnapshot.forEach((doc) => {
-      selectedDoc = doc;
-    });
-  } else {
-    const ltQuerySnapshot = await receivableUsersCollectionRef
-      .where(admin.firestore.FieldPath.documentId(), 'not-in', excludingIds)
-      .where(FIELD.SEARCH_FLAG, '==', searchFlag)
-      .where(admin.firestore.FieldPath.documentId(), '<', randomKey)
-      .limit(1)
-      .get();
+  let ltList: admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData>[] = [];
 
-    log.debug(`receivable user search lt size : ${ltQuerySnapshot.size}`);
-    if (ltQuerySnapshot.size > 0) {
-      ltQuerySnapshot.forEach((doc) => {
+  for (const doc of querySnapshot.docs) {
+    if (doc.id >= randomKey) {
+      if (!excludingIds.has(doc.id)) {
         selectedDoc = doc;
-      });
+        break;
+      }
+    } else {
+      if (!excludingIds.has(doc.id)) ltList.push(doc);
     }
   }
+
+  if (selectedDoc == null) {
+    for (let i = ltList.length - 1; i >= 0; i--) {
+      const doc = ltList[i];
+      // one more check
+      if (!excludingIds.has(doc.id)) {
+        selectedDoc = doc;
+        break;
+      }
+    }
+  }
+
+  // const gteQuerySnapshot = await receivableUsersCollectionRef
+  //   .where(admin.firestore.FieldPath.documentId(), 'not-in', excludingIds)
+  //   .where(FIELD.SEARCH_FLAG, '==', searchFlag)
+  //   .where(admin.firestore.FieldPath.documentId(), '>=', randomKey)
+  //   .limit(1)
+  //   .get();
+
+  // log.debug(`receivable user search gte size : ${gteQuerySnapshot.size}`);
+
+  // let selectedDoc = null;
+
+  // if (gteQuerySnapshot.size > 0) {
+  //   gteQuerySnapshot.forEach((doc) => {
+  //     selectedDoc = doc;
+  //   });
+  // } else {
+  //   const ltQuerySnapshot = await receivableUsersCollectionRef
+  //     .where(admin.firestore.FieldPath.documentId(), 'not-in', excludingIds)
+  //     .where(FIELD.SEARCH_FLAG, '==', searchFlag)
+  //     .where(admin.firestore.FieldPath.documentId(), '<', randomKey)
+  //     .limit(1)
+  //     .get();
+
+  //   log.debug(`receivable user search lt size : ${ltQuerySnapshot.size}`);
+  //   if (ltQuerySnapshot.size > 0) {
+  //     ltQuerySnapshot.forEach((doc) => {
+  //       selectedDoc = doc;
+  //     });
+  //   }
+  // }
 
   log.debug(`end queryToReceivableUsers method / selectedDoc is null : ${selectedDoc == null}`);
 
@@ -474,7 +505,6 @@ async function queryToExtraReceivableUsers({
   const extraReceivableUsersCollectionRef = _firestore.collection(COLLECTION.EXTRARECEIVABLEUSERS);
 
   log.debug(`search extra receivable users collection`);
-  let selectedDoc = null;
   // const maxCount = 10;
   // let tryCount = 1;
 
@@ -485,38 +515,67 @@ async function queryToExtraReceivableUsers({
 
   const randomKey = extraReceivableUsersCollectionRef.doc().id;
 
-  const excludingIds = [...rejectionIds, ...linkedIds, ...blockedIds];
+  // const excludingIds = [...rejectionIds, ...linkedIds, ...blockedIds];
+  const excludingIds = new Set([...rejectionIds, ...linkedIds, ...blockedIds]);
 
-  const gteQuerySnapshot = await extraReceivableUsersCollectionRef
-    .where(admin.firestore.FieldPath.documentId(), 'not-in', excludingIds)
-    .where(admin.firestore.FieldPath.documentId(), '>=', randomKey)
-    // .orderBy(FIELD.WR)
-    .limit(1)
-    .get();
+  const querySnapshot = await extraReceivableUsersCollectionRef.get();
 
-  log.debug(`extra receivable user search gte size : ${gteQuerySnapshot.size}`);
+  let selectedDoc = null;
 
-  if (gteQuerySnapshot.size > 0) {
-    gteQuerySnapshot.forEach((doc) => {
-      // selectedDoc = validateResultFromQueryToExtra(doc, rejectionIds, linkedIds);
-      selectedDoc = doc;
-    });
-  } else {
-    const ltQuerySnapshot = await extraReceivableUsersCollectionRef
-      .where(admin.firestore.FieldPath.documentId(), 'not-in', excludingIds)
-      .where(admin.firestore.FieldPath.documentId(), '<', randomKey)
-      .limit(1)
-      .get();
+  let ltList: admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData>[] = [];
 
-    log.debug(`extra receivable user search lt size : ${ltQuerySnapshot.size}`);
-
-    if (ltQuerySnapshot.size > 0) {
-      ltQuerySnapshot.forEach((doc) => {
-        // selectedDoc = validateResultFromQueryToExtra(doc, rejectionIds, linkedIds);
+  for (const doc of querySnapshot.docs) {
+    if (doc.id >= randomKey) {
+      if (!excludingIds.has(doc.id)) {
         selectedDoc = doc;
-      });
+        break;
+      }
+    } else {
+      if (!excludingIds.has(doc.id)) ltList.push(doc);
     }
   }
+
+  if (selectedDoc == null) {
+    for (let i = ltList.length - 1; i >= 0; i--) {
+      const doc = ltList[i];
+      // one more check
+      if (!excludingIds.has(doc.id)) {
+        selectedDoc = doc;
+        break;
+      }
+    }
+  }
+
+  // const gteQuerySnapshot = await extraReceivableUsersCollectionRef
+  //   .where(admin.firestore.FieldPath.documentId(), 'not-in', excludingIds)
+  //   .where(admin.firestore.FieldPath.documentId(), '>=', randomKey)
+  //   // .orderBy(FIELD.WR)
+  //   .limit(1)
+  //   .get();
+
+  // log.debug(`extra receivable user search gte size : ${gteQuerySnapshot.size}`);
+
+  // if (gteQuerySnapshot.size > 0) {
+  //   gteQuerySnapshot.forEach((doc) => {
+  //     // selectedDoc = validateResultFromQueryToExtra(doc, rejectionIds, linkedIds);
+  //     selectedDoc = doc;
+  //   });
+  // } else {
+  //   const ltQuerySnapshot = await extraReceivableUsersCollectionRef
+  //     .where(admin.firestore.FieldPath.documentId(), 'not-in', excludingIds)
+  //     .where(admin.firestore.FieldPath.documentId(), '<', randomKey)
+  //     .limit(1)
+  //     .get();
+
+  //   log.debug(`extra receivable user search lt size : ${ltQuerySnapshot.size}`);
+
+  //   if (ltQuerySnapshot.size > 0) {
+  //     ltQuerySnapshot.forEach((doc) => {
+  //       // selectedDoc = validateResultFromQueryToExtra(doc, rejectionIds, linkedIds);
+  //       selectedDoc = doc;
+  //     });
+  //   }
+  // }
 
   // if (selectedDoc == null && tryCount++ >= maxCount) {
   //   log.debug(
