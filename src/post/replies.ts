@@ -2,7 +2,7 @@ import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
-// import sendNewReplyArrivedMessage from '../message/new_reply_arrived';
+import sendNewReplyArrivedMessage from '../message/new_reply_arrived';
 
 const log = functions.logger;
 
@@ -17,25 +17,31 @@ export const onCreateReplyTirgger = functions
     const postDocumentId = context.params.postDocId;
     // const replyDocId = context.params.replyDocId;
 
-    // const newReplyData = snap.data();
+    const newReplyData = snap.data();
 
-    // const createReplyUserDocId = newReplyData[FIELD.USER_DOC_ID];
+    const createReplyUserDocId = newReplyData[FIELD.USER_DOC_ID];
 
     // get post document with post id
     const postDocRef = firestore.collection(COLLECTION.POSTS).doc(postDocumentId);
+    const replyCollectionRef = firestore
+      .collection(COLLECTION.POSTS)
+      .doc(postDocumentId)
+      .collection(COLLECTION.REPLIES);
 
     // get preview post document with post id
     // const previewPostDocRef = firestore.collection(COLLECTION.POSTPREVIEWS).doc(postDocumentId);
 
     await firestore.runTransaction(async (transaction) => {
       const postDocumnet = await transaction.get(postDocRef);
+      const replyCollection = await transaction.get(replyCollectionRef);
       if (!postDocumnet.exists) {
         throw `${COLLECTION.POSTS}/${postDocumentId}} does not exist`;
       }
 
       // get reply count from post document
-      const replyCount = postDocumnet.get(FIELD.REPLY_COUNT);
-      const updateReplyCount = replyCount + 1;
+      // const replyCount = postDocumnet.get(FIELD.REPLY_COUNT);
+      // const updateReplyCount = replyCount + 1;
+      const updateReplyCount = replyCollection.size;
 
       // log.debug(`reply count : ${replyCount} / ${updateReplyCount}`);
 
@@ -53,7 +59,7 @@ export const onCreateReplyTirgger = functions
     });
 
     // reply push notification
-    // sendNewReplyArrivedMessage(postDocumentId, createReplyUserDocId);
+    sendNewReplyArrivedMessage(postDocumentId, createReplyUserDocId);
 
     // Todo: interator post/doc/links / send message reply count and reply doc
 
