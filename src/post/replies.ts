@@ -2,6 +2,7 @@ import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 import { FIELD } from '../constant/field';
+import sendNewReplyArrivedMessage from '../message/new_reply_arrived';
 
 const log = functions.logger;
 
@@ -14,6 +15,11 @@ export const onCreateReplyTirgger = functions
 
     // get wildcard post id
     const postDocumentId = context.params.postDocId;
+    // const replyDocId = context.params.replyDocId;
+
+    const newReplyData = snap.data();
+
+    const createReplyUserDocId = newReplyData[FIELD.USER_DOC_ID];
 
     // get post document with post id
     const postDocRef = firestore.collection(COLLECTION.POSTS).doc(postDocumentId);
@@ -45,6 +51,9 @@ export const onCreateReplyTirgger = functions
 
       log.debug(`update previewPost, post transaction end`);
     });
+
+    // reply push notification
+    sendNewReplyArrivedMessage(postDocumentId, createReplyUserDocId);
 
     // Todo: interator post/doc/links / send message reply count and reply doc
 
