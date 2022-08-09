@@ -16,6 +16,7 @@ const _firestore = admin.firestore();
 export default async function sendNewReplyArrivedMessage(
   postDocId: string,
   createReplyUserDocId: string,
+  replyBody: string,
 ) {
   const postRef = await _firestore.collection(COLLECTION.POSTS).doc(postDocId).get();
 
@@ -40,6 +41,7 @@ export default async function sendNewReplyArrivedMessage(
           },
           notification: {
             title: title[systemLanguage ?? Language.korean.toString()],
+            body: replyBody,
           },
         },
         {

@@ -20,6 +20,7 @@ export const onCreateReplyTirgger = functions
     const newReplyData = snap.data();
 
     const createReplyUserDocId = newReplyData[FIELD.USER_DOC_ID];
+    const replyBody = newReplyData[FIELD.BODY];
 
     // get post document with post id
     const postDocRef = firestore.collection(COLLECTION.POSTS).doc(postDocumentId);
@@ -59,7 +60,7 @@ export const onCreateReplyTirgger = functions
     });
 
     // reply push notification
-    sendNewReplyArrivedMessage(postDocumentId, createReplyUserDocId);
+    sendNewReplyArrivedMessage(postDocumentId, createReplyUserDocId, replyBody);
 
     // Todo: interator post/doc/links / send message reply count and reply doc
 

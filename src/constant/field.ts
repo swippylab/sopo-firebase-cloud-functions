@@ -20,4 +20,5 @@ export const FIELD = {
   IS_READING: 'isReading',
   SYSTEM_LANGUAGE: 'systemLanguage',
   WRITECOUNT: 'writeCount',
+  BODY: 'body',
 };
