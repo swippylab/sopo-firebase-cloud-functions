@@ -37,6 +37,7 @@ export default async function sendNewReplyArrivedMessage(
             type: 'newReply',
             postId: postDocId,
             message: title[systemLanguage ?? Language.korean.toString()],
+            body: replyBody,
             // receivedDate: sentDate.toISOString(),
           },
           notification: {
