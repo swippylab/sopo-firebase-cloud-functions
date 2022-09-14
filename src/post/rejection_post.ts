@@ -2,13 +2,12 @@ import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import { COLLECTION } from '../constant/collection';
 
-const log = functions.logger;
-const _firestore = admin.firestore();
-
-export const onRejectPostTrigger = functions
+export const onCreateRejectionPostTrigger = functions
   .runWith({ failurePolicy: true })
   .firestore.document(`${COLLECTION.POSTS}/{postDocId}/${COLLECTION.REJECTIONS}/{userDocId}}`)
   .onCreate(async (snap, context) => {
+    const log = functions.logger;
+    const _firestore = admin.firestore();
     // get wildcard
     const postDocId = context.params.postDocId;
     const userDocId = context.params.userDocId;
