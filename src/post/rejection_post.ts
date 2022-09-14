@@ -50,7 +50,7 @@ export const onRejectPostTrigger = functions
       if (linkDoc.exists) {
         transaction.delete(linkDocRef);
       }
-
-      log.debug(`<${userDocId}> user / reject post : [${postDocId}]`);
     });
+
+    log.debug(`<${userDocId}> user / reject post : [${postDocId}]`);
   });
