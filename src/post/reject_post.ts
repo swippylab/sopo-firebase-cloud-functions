@@ -6,7 +6,7 @@ const log = functions.logger;
 const _firestore = admin.firestore();
 
 export const onRejectPostTrigger = functions
-  .runWith({})
+  .runWith({ failurePolicy: true })
   .firestore.document(`${COLLECTION.POSTS}/{postDocId}/${COLLECTION.REJECTIONS}/{userDocId}}`)
   .onCreate(async (snap, context) => {
     // get wildcard
