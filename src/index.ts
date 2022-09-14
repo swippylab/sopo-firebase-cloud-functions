@@ -17,6 +17,7 @@ admin.initializeApp({
 // export * from './post/links';
 export * from './post/new_posts';
 export * from './post/post_creation';
+export * from './post/reject_post';
 export * from './post/replies';
 export * from './post/shceduledFunction';
 // export * from './user/temp';

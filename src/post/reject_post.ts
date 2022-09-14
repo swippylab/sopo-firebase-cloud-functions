@@ -14,7 +14,7 @@ export const onRejectPostTrigger = functions
     const userDocId = context.params.userDocId;
 
     // get data from rejection post document
-    const rejectionPostData = snap.data();
+    // const rejectionPostData = snap.data();
 
     const allPostDocRef = _firestore
       .collection(COLLECTION.USERS)
@@ -48,9 +48,9 @@ export const onRejectPostTrigger = functions
       }
 
       if (linkDoc.exists) {
-        transaction.delete(linkDoc);
+        transaction.delete(linkDocRef);
       }
 
-      log.debug(`[${postDocId}] update linkedCount transaction end`);
+      log.debug(`<${userDocId}> user / reject post : [${postDocId}]`);
     });
   });
