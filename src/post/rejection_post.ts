@@ -4,7 +4,7 @@ import { COLLECTION } from '../constant/collection';
 
 export const onCreateRejectionPostTrigger = functions
   .runWith({ failurePolicy: true })
-  .firestore.document(`${COLLECTION.POSTS}/{postDocId}/${COLLECTION.REJECTIONS}/{userDocId}}`)
+  .firestore.document(`${COLLECTION.POSTS}/{postDocId}/${COLLECTION.REJECTIONS}/{userDocId}`)
   .onCreate(async (snap, context) => {
     const log = functions.logger;
     const _firestore = admin.firestore();
