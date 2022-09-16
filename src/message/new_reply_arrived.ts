@@ -7,8 +7,8 @@ import Language from '../model/language';
 const title = {
   // [Language.korean.toString()]: '연결된 글에 새로운 댓글이 달렸어요',
   // [Language.english.toString()]: 'You have received a new reply by linked post',
-  [Language.korean.toString()]: '작성한 글에 새로운 댓글이 달렸어요',
-  [Language.english.toString()]: 'You have received a new reply on a post yor wrote',
+  [Language.korean.toString()]: '작성한 편지에 새로운 댓글이 달렸어요',
+  [Language.english.toString()]: 'You have received a new reply on a letter yor wrote',
 };
 
 const _firestore = admin.firestore();
